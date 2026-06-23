@@ -1,0 +1,5 @@
+# Logs del flujo task-orchestrator (oro para el orquestador, ruido para el repo)
+.task-logs/
+
+# macOS
+.DS_Store
