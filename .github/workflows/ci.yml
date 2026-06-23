@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck on all shell scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          # Scan every *.sh file found anywhere in the repo tree
+          scandir: "."
+          # Use severity "warning" so style suggestions don't block CI,
+          # but real errors and warnings do.
+          severity: warning
+
+  validate-frontmatter:
+    name: Validate frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate SKILL.md and agents/*.md frontmatter
+        run: python3 scripts/validate-frontmatter.py .
