@@ -1,6 +1,6 @@
 # Configuración de subagentes
 
-Este archivo detalla los tres subagentes del flujo. Cópialos a `.claude/agents/`
+Este archivo detalla los cuatro subagentes del flujo. Cópialos a `.claude/agents/`
 (versión canónica en la carpeta `agents/` de esta skill) o lánzalos inline con la
 tool `Task` usando estos mismos prompts.
 

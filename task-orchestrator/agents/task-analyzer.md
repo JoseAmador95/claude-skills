@@ -6,7 +6,7 @@ description: >-
   de implementar, para mapear código, dependencias, convenciones, tests y
   riesgos sin modificar nada. Puede lanzarse en paralelo, uno por subsistema.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 effort: medium
 ---
 

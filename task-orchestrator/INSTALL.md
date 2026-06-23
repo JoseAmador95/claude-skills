@@ -1,6 +1,6 @@
 # Instalación — task-orchestrator
 
-Esta carpeta es una **skill de Claude Code** más sus tres subagentes y plantillas.
+Esta carpeta es una **skill de Claude Code** más sus cuatro subagentes y plantillas.
 
 ## 1. Instalar la skill
 
