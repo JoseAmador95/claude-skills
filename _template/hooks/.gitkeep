@@ -1,0 +1,14 @@
+# Carpeta hooks/
+#
+# Pon aquí los scripts bash que actúan como gates deterministas
+# (pre-commit, pre-push, post-tool-use, etc.) y el fragmento de
+# configuración listo para fusionar:
+#
+#   hooks/settings.snippet.json   ← fragmento para .claude/settings.json
+#   hooks/pre-push.sh             ← ejemplo de script
+#
+# Todos los scripts deben ser ejecutables (chmod +x) y fallar "en seguro":
+# si falta una herramienta, no rompan el flujo de trabajo.
+#
+# Borra este archivo cuando añadas tu primer hook real,
+# o elimina la carpeta entera si la skill no necesita hooks.

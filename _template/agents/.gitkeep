@@ -1,0 +1,14 @@
+# Carpeta agents/
+#
+# Pon aquí un archivo .md por subagente que use tu skill.
+# Frontmatter requerido:
+#
+#   ---
+#   name: <nombre-agente>
+#   description: >-
+#     Qué hace este subagente y cuándo se invoca.
+#   tools: Read, Bash, Edit   # herramientas que puede usar
+#   model: sonnet             # haiku | sonnet | opus
+#   ---
+#
+# Borra este archivo cuando añadas tu primer agente real.
