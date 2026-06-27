@@ -1,44 +1,44 @@
 #!/usr/bin/env bash
-# Instalador del bundle task-orchestrator en un destino .claude/.
-# Automatiza los pasos manuales documentados en INSTALL.md:
-#   1. Instala la skill en  <target>/skills/task-orchestrator
-#   2. Instala los agentes en <target>/agents/
-#   3. Instala el comando de relevo en <target>/commands/
-#   4. Da chmod +x a los hooks instalados
-#   5. Fusiona hooks/settings.snippet.json en <target>/settings.json (con jq),
-#      sin pisar las claves/hooks existentes del usuario.
+# Installer for the task-orchestrator bundle into a .claude/ target.
+# Automates the manual steps documented in INSTALL.md:
+#   1. Install the skill into   <target>/skills/task-orchestrator
+#   2. Install the agents into  <target>/agents/
+#   3. Install the commands into <target>/commands/
+#   4. chmod +x the installed hooks
+#   5. Merge hooks/settings.snippet.json into <target>/settings.json (with jq),
+#      without clobbering the user's existing keys/hooks.
 #
-# Idempotente: re-ejecutar deja el mismo estado final, sin duplicar hooks.
+# Idempotent: re-running leaves the same final state, with no duplicated hooks.
 set -euo pipefail
 
-# --- Resolver la ruta del propio script (fuente del bundle) ---------------
+# --- Resolve this script's path (the bundle source) -----------------------
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)
 SNIPPET="$SCRIPT_DIR/hooks/settings.snippet.json"
 
-# --- Defaults de flags ----------------------------------------------------
+# --- Flag defaults --------------------------------------------------------
 MODE="user"          # user | project
-PROJECT_DIR=""       # destino para --project (default: cwd)
-USE_LINK=0           # 0 copia, 1 symlink
+PROJECT_DIR=""       # destination for --project (default: cwd)
+USE_LINK=0           # 0 copy, 1 symlink
 DRY_RUN=0
 
 usage() {
   cat <<'EOF'
-Uso: install.sh [opciones]
+Usage: install.sh [options]
 
-Instala el bundle task-orchestrator (skill, agentes, comando y hooks) en un
-destino .claude/.
+Install the task-orchestrator bundle (skill, agents, commands, and hooks) into
+a .claude/ target.
 
-Opciones:
-  --user            Instala en ~/.claude (por defecto).
-  --project [DIR]   Instala en DIR/.claude (DIR por defecto: directorio actual).
-  --link            Usa symlinks en vez de copia para skill/agentes/comando,
-                    de modo que un 'git pull' del repo actualice la instalación.
-  --dry-run         Muestra lo que haría sin tocar nada.
-  -h, --help        Muestra esta ayuda.
+Options:
+  --user            Install into ~/.claude (default).
+  --project [DIR]   Install into DIR/.claude (DIR defaults to the current dir).
+  --link            Use symlinks instead of copies for skill/agents/commands,
+                    so a 'git pull' of the repo updates the installation.
+  --dry-run         Show what it would do without touching anything.
+  -h, --help        Show this help.
 EOF
 }
 
-# --- Parseo de flags ------------------------------------------------------
+# --- Flag parsing ---------------------------------------------------------
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --user)
@@ -48,7 +48,7 @@ while [ "$#" -gt 0 ]; do
     --project)
       MODE="project"
       shift
-      # DIR opcional: solo lo consumimos si no es otra flag.
+      # Optional DIR: only consume it if it isn't another flag.
       if [ "$#" -gt 0 ] && [ "${1#-}" = "$1" ]; then
         PROJECT_DIR="$1"
         shift
@@ -67,14 +67,14 @@ while [ "$#" -gt 0 ]; do
       exit 0
       ;;
     *)
-      echo "Error: opción desconocida '$1'." >&2
+      echo "Error: unknown option '$1'." >&2
       usage >&2
       exit 1
       ;;
   esac
 done
 
-# --- Calcular el destino --------------------------------------------------
+# --- Compute the destination ----------------------------------------------
 if [ "$MODE" = "project" ]; then
   base_dir="${PROJECT_DIR:-$PWD}"
   TARGET="$base_dir/.claude"
@@ -85,7 +85,7 @@ fi
 # --- Helpers --------------------------------------------------------------
 log() { printf '%s\n' "$*"; }
 
-# Ejecuta un comando, o lo imprime si estamos en dry-run.
+# Run a command, or print it if we're in dry-run mode.
 run() {
   if [ "$DRY_RUN" -eq 1 ]; then
     printf '  [dry-run] %s\n' "$*"
@@ -94,15 +94,15 @@ run() {
   fi
 }
 
-# Instala (copia o symlink) un origen en un destino, idempotente.
+# Install (copy or symlink) a source into a destination, idempotently.
 install_path() {
   local src="$1" dest="$2"
   if [ "$USE_LINK" -eq 1 ]; then
-    # symlink: borra el destino previo (archivo, dir o link) y re-enlaza.
+    # symlink: remove the previous destination (file, dir, or link) and re-link.
     run rm -rf -- "$dest"
     run ln -s -- "$src" "$dest"
   else
-    # copia: para directorios, limpia primero para no dejar restos huérfanos.
+    # copy: for directories, clean first so no orphan leftovers remain.
     if [ -d "$src" ]; then
       run rm -rf -- "$dest"
     fi
@@ -110,66 +110,69 @@ install_path() {
   fi
 }
 
-log "task-orchestrator :: instalación"
-log "  origen:  $SCRIPT_DIR"
-log "  destino: $TARGET"
+log "task-orchestrator :: install"
+log "  source: $SCRIPT_DIR"
+log "  target: $TARGET"
 if [ "$USE_LINK" -eq 1 ]; then
-  log "  modo:    symlink"
+  log "  mode:   symlink"
 else
-  log "  modo:    copia"
+  log "  mode:   copy"
 fi
 if [ "$DRY_RUN" -eq 1 ]; then
-  log "  (dry-run: no se modificará nada)"
+  log "  (dry-run: nothing will be modified)"
 fi
 log ""
 
 # --- 1. Skill -------------------------------------------------------------
-log "1. Instalando skill en $TARGET/skills/task-orchestrator"
+log "1. Installing skill into $TARGET/skills/task-orchestrator"
 run mkdir -p -- "$TARGET/skills"
 install_path "$SCRIPT_DIR" "$TARGET/skills/task-orchestrator"
 
-# --- 2. Agentes -----------------------------------------------------------
-log "2. Instalando agentes en $TARGET/agents/"
+# --- 2. Agents ------------------------------------------------------------
+log "2. Installing agents into $TARGET/agents/"
 run mkdir -p -- "$TARGET/agents"
 for agent in "$SCRIPT_DIR"/agents/*.md; do
   [ -e "$agent" ] || continue
   install_path "$agent" "$TARGET/agents/$(basename -- "$agent")"
 done
 
-# --- 3. Comando de relevo -------------------------------------------------
-log "3. Instalando comando en $TARGET/commands/task-execute.md"
+# --- 3. Commands ----------------------------------------------------------
+log "3. Installing commands into $TARGET/commands/"
 run mkdir -p -- "$TARGET/commands"
-install_path "$SCRIPT_DIR/commands/task-execute.md" "$TARGET/commands/task-execute.md"
+for cmd in "$SCRIPT_DIR"/commands/*.md; do
+  [ -e "$cmd" ] || continue
+  install_path "$cmd" "$TARGET/commands/$(basename -- "$cmd")"
+done
 
-# --- 4. chmod +x a los hooks instalados -----------------------------------
-log "4. Asegurando permisos de ejecución de los hooks"
-# Con symlink, los hooks apuntan al repo; con copia, viven bajo el destino.
-# En ambos casos chmod sobre la ruta instalada resuelve el archivo real.
+# --- 4. chmod +x the installed hooks --------------------------------------
+log "4. Ensuring the hooks are executable"
+# With symlinks the hooks point at the repo; with copies they live under the
+# target. Either way, chmod on the installed path resolves the real file.
 for hook in "$TARGET"/skills/task-orchestrator/hooks/*.sh; do
   if [ "$DRY_RUN" -eq 1 ]; then
     printf '  [dry-run] chmod +x %s\n' "$hook"
   else
     [ -e "$hook" ] || continue
-    # Nota: BSD chmod (macOS) no soporta el separador '--'; las rutas son
-    # absolutas, así que omitirlo es seguro.
+    # Note: BSD chmod (macOS) doesn't support the '--' separator; the paths are
+    # absolute, so omitting it is safe.
     chmod +x "$hook"
   fi
 done
 
-# --- 5. Merge de settings.json --------------------------------------------
-log "5. Fusionando hooks en $TARGET/settings.json"
+# --- 5. settings.json merge -----------------------------------------------
+log "5. Merging hooks into $TARGET/settings.json"
 SETTINGS="$TARGET/settings.json"
 
 if ! command -v jq >/dev/null 2>&1; then
-  log "  AVISO: 'jq' no está disponible; se omite la fusión de settings.json."
-  log "  Paso manual: pega el contenido de"
+  log "  WARNING: 'jq' is not available; skipping the settings.json merge."
+  log "  Manual step: paste the contents of"
   log "    $SNIPPET"
-  log "  en $SETTINGS (fusionándolo con tus hooks existentes)."
+  log "  into $SETTINGS (merging it with your existing hooks)."
 else
   if [ "$DRY_RUN" -eq 1 ]; then
-    log "  [dry-run] fusionaría $SNIPPET en $SETTINGS (sin duplicar hooks)."
+    log "  [dry-run] would merge $SNIPPET into $SETTINGS (without duplicating hooks)."
   else
-    # Limpiamos las claves de comentario '//' del snippet antes de fusionar.
+    # Strip the '//' comment keys from the snippet before merging.
     snippet_clean=$(jq 'del(.["//"], .["//paths"])' "$SNIPPET")
 
     if [ -f "$SETTINGS" ]; then
@@ -178,17 +181,17 @@ else
       current='{}'
     fi
 
-    # Merge idempotente:
-    #  - Las claves de nivel superior del usuario se preservan ('* + snippet'
-    #    deja ganar al snippet solo en .hooks, que reconstruimos abajo).
-    #  - Para cada evento de hook (PreToolUse, PostToolUse, ...) y cada matcher,
-    #    unimos las listas de comandos y deduplicamos por .command, de modo que
-    #    re-ejecutar no acumula entradas repetidas.
+    # Idempotent merge:
+    #  - The user's top-level keys are preserved ('* + snippet' lets the snippet
+    #    win only on .hooks, which we rebuild below).
+    #  - For each hook event (PreToolUse, PostToolUse, ...) and each matcher, we
+    #    union the command lists and dedupe by .command, so re-running does not
+    #    accumulate repeated entries.
     merged=$(jq -n \
       --argjson cur "$current" \
       --argjson snip "$snippet_clean" '
-      # Funde dos arrays de bloques {matcher, hooks:[...]} agrupando por matcher
-      # y deduplicando los hooks por su .command.
+      # Merge two arrays of {matcher, hooks:[...]} blocks, grouping by matcher
+      # and deduping the hooks by their .command.
       def merge_event(a; b):
         ((a // []) + (b // []))
         | group_by(.matcher)
@@ -198,7 +201,7 @@ else
                     | unique_by(.command // (. | tojson)))
           });
 
-      # Funde el objeto .hooks evento por evento.
+      # Merge the .hooks object event by event.
       def merge_hooks(a; b):
         reduce ((a // {}) * (b // {}) | keys_unsorted[]) as $k
           ({}; .[$k] = merge_event(a[$k]; b[$k]));
@@ -208,16 +211,16 @@ else
       ' )
 
     printf '%s\n' "$merged" > "$SETTINGS"
-    log "  settings.json actualizado (hooks deduplicados)."
+    log "  settings.json updated (hooks deduplicated)."
   fi
 fi
 
-# --- Resumen --------------------------------------------------------------
+# --- Summary --------------------------------------------------------------
 log ""
-log "Instalación completada."
+log "Installation complete."
 log "  skill:    $TARGET/skills/task-orchestrator"
-log "  agentes:  $TARGET/agents/ (task-analyzer, task-implementer, task-verifier, task-dreamer)"
-log "  comando:  $TARGET/commands/task-execute.md"
+log "  agents:   $TARGET/agents/ (task-analyzer, task-implementer, task-verifier, task-dreamer)"
+log "  commands: $TARGET/commands/ (task, task-execute)"
 log "  settings: $TARGET/settings.json"
 log ""
-log "Nota: verifica con /agents dentro de Claude Code que aparezcan los subagentes."
+log "Note: verify with /agents inside Claude Code that the subagents show up."
