@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# PreToolUse (matcher: Bash). Bloquea `git commit`/`git push` si estás en la rama
-# default (main/master). Convierte la regla de la FASE 8 en algo imposible de saltar.
-# Requiere `jq`. Si falta, no bloquea (falla en seguro hacia "permitir").
+# PreToolUse (matcher: Bash). Blocks `git commit`/`git push` if you are on the
+# default branch (main/master). Makes the PHASE 8 rule impossible to skip.
+# Requires `jq`. If missing, it does not block (fails safe toward "allow").
 set -uo pipefail
 input=$(cat)
 command -v jq >/dev/null 2>&1 || { exit 0; }
@@ -13,7 +13,7 @@ case "$cmd" in
     default=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|origin/||')
     default=${default:-main}
     if [ "$branch" = "$default" ] || [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
-      echo "Bloqueado: estás en la rama '$branch' (default). Crea una rama de feature (git switch -c feat/...) antes de commitear o pushear." >&2
+      echo "Blocked: you are on branch '$branch' (default). Create a feature branch (git switch -c feat/...) before committing or pushing." >&2
       exit 2
     fi
     ;;

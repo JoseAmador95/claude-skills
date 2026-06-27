@@ -1,43 +1,44 @@
-# Documentación y ADR
+# Documentation and ADRs
 
-Dos artefactos distintos, según lo que la tarea haya cambiado.
+Two distinct artifacts, depending on what the task has changed.
 
-## 1. Documentación (`docs/`)
+## 1. Documentation (`docs/`)
 
-Actualiza los `.md` afectados cuando la tarea cambie comportamiento observable,
-contratos de API, configuración, o introduzca limitaciones nuevas. Ejemplos:
-README de un módulo, guía de uso, referencia de endpoints, notas de configuración.
+Update the affected `.md` files when the task changes observable behavior, API
+contracts, configuration, or introduces new limitations. Examples: a module's
+README, a usage guide, an endpoint reference, configuration notes.
 
-Regla práctica: si alguien que use el proyecto dentro de un mes necesitaría saber
-esto, va a docs. Si es solo un detalle interno que se infiere leyendo el código,
-no lo dupliques.
+Practical rule: if someone using the project a month from now would need to know
+this, it goes in docs. If it's just an internal detail that can be inferred by
+reading the code, don't duplicate it.
 
-**Diagramas (Mermaid)**: el texto es el recurso principal. Un diagrama Mermaid es
-bienvenido cuando aclara algo que en prosa quedaría enrevesado —un flujo, una
-máquina de estados, las relaciones de una arquitectura— pero nunca como sustituto
-de una explicación clara ni como adorno. Embébelo en un bloque ```mermaid dentro
-del `.md`. Si dudas de si el diagrama aporta, probablemente no aporta: déjalo en texto.
+**Diagrams (Mermaid)**: text is the primary resource. A Mermaid diagram is
+welcome when it clarifies something that prose would make convoluted — a flow, a
+state machine, the relationships of an architecture — but never as a substitute
+for a clear explanation nor as decoration. Embed it in a ```mermaid block inside
+the `.md`. If you doubt whether the diagram adds value, it probably doesn't: leave
+it as text.
 
 ## 2. ADR (Architecture Decision Record)
 
-Un ADR captura **una decisión de arquitectura** y su porqué, para que el futuro
-equipo (o tú dentro de seis meses) entienda por qué las cosas son como son.
+An ADR captures **one architecture decision** and its why, so that the future team
+(or you six months from now) understands why things are the way they are.
 
-**Cuándo crear uno**: la tarea eligió entre alternativas con consecuencias a largo
-plazo (un patrón, una librería, un trade-off de diseño, un cambio de contrato).
+**When to create one**: the task chose between alternatives with long-term
+consequences (a pattern, a library, a design trade-off, a contract change).
 
-**Cuándo NO**: cambios triviales, fixes sin decisión de fondo. Un ADR vacío es
-deuda, no documentación — sáltalo y dilo.
+**When NOT to**: trivial changes, fixes without an underlying decision. An empty
+ADR is debt, not documentation — skip it and say so.
 
-**Ubicación y numeración**: `docs/adr/NNNN-<titulo-en-kebab>.md`, con `NNNN`
-incremental de cuatro dígitos (mira el último existente y suma uno). Usa
+**Location and numbering**: `docs/adr/NNNN-<title-in-kebab>.md`, with `NNNN` an
+incremental four-digit number (look at the last existing one and add one). Use
 `assets/adr.template.md`.
 
-**Campos específicos de este flujo** (además de los estándar Contexto / Decisión /
-Consecuencias):
-- **Cambios al workflow**: cómo cambia la forma de trabajar el equipo, si aplica.
-- **Limitaciones**: qué NO resuelve esta decisión, restricciones conocidas.
-- **Decisiones que tomó el usuario**: las respuestas de la fase 4 que moldearon el
-  resultado. Atribúyelas explícitamente — son contexto que se pierde si no se anota.
+**Fields specific to this flow** (in addition to the standard Context / Decision /
+Consequences):
+- **Workflow changes**: how the way the team works changes, if applicable.
+- **Limitations**: what this decision does NOT solve, known constraints.
+- **Decisions the user made**: the phase 4 answers that shaped the result.
+  Attribute them explicitly — they're context that gets lost if not noted down.
 
-El estado del ADR suele empezar en `Propuesto` y pasar a `Aceptado` al mergear.
+The ADR's status usually starts at `Proposed` and moves to `Accepted` on merge.

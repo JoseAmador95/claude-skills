@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# PreToolUse (matcher: Bash). Si el comando es `git push`, corre los tests; si
-# fallan, bloquea el push. Backstop determinista que respalda al verificador.
-# Ajusta el comando de test con la env var TASK_TEST_CMD (default: "npm test").
-# Requiere `jq`. Si falta, no bloquea.
+# PreToolUse (matcher: Bash). If the command is `git push`, run the tests; if
+# they fail, block the push. Deterministic backstop that backs up the verifier.
+# Set the test command with the TASK_TEST_CMD env var (default: "npm test").
+# Requires `jq`. If missing, it does not block.
 set -uo pipefail
 input=$(cat)
 command -v jq >/dev/null 2>&1 || { exit 0; }
@@ -12,7 +12,7 @@ case "$cmd" in
   *"git push"*)
     TEST_CMD=${TASK_TEST_CMD:-"npm test"}
     if ! eval "$TEST_CMD" >/tmp/task-orchestrator-tests.log 2>&1; then
-      echo "Bloqueado: los tests fallan, no se hace push. Log: /tmp/task-orchestrator-tests.log" >&2
+      echo "Blocked: tests are failing, push aborted. Log: /tmp/task-orchestrator-tests.log" >&2
       exit 2
     fi
     ;;

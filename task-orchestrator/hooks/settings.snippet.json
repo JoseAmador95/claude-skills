@@ -1,6 +1,6 @@
 {
-  "//": "Pega esto en .claude/settings.json (o fusiónalo con tus hooks existentes).",
-  "//paths": "Asume la skill instalada en .claude/skills/task-orchestrator/. Ajusta si la pusiste en ~/.claude/.",
+  "//": "Paste this into .claude/settings.json (or merge it with your existing hooks).",
+  "//paths": "Assumes the skill is installed at .claude/skills/task-orchestrator/. Adjust if you put it under ~/.claude/.",
   "hooks": {
     "PreToolUse": [
       {

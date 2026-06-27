@@ -1,4 +1,4 @@
-# Logs del flujo task-orchestrator (oro para el orquestador, ruido para el repo)
+# task-orchestrator workflow logs (gold for the orchestrator, noise for the repo)
 .task-logs/
 
 # macOS

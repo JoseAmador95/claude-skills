@@ -1,30 +1,30 @@
-## Resumen
+## Summary
 
-<Qué hace este PR, en 2-3 frases. Closes #N>
+<What this PR does, in 2-3 sentences. Closes #N>
 
-## ⚠️ Cambios visibles para el usuario
+## ⚠️ User-visible changes
 
-<Lo que cambia para quien usa el producto. Si no hay, escribe "Ninguno".>
+<What changes for whoever uses the product. If none, write "None".>
 
-**Antes**
-<estado anterior>
+**Before**
+<previous state>
 
-**Después**
-<estado nuevo>
+**After**
+<new state>
 
-## Capturas / ejemplos
+## Screenshots / examples
 
-<UI: capturas antes/después. Backend: ejemplo de request/response o snippet de uso.>
+<UI: before/after screenshots. Backend: request/response example or usage snippet.>
 
-## Qué se hizo
+## What was done
 
-- <sub-tarea 1 — commit `feat(...)`>
-- <sub-tarea 2 — commit `fix(...)`>
+- <sub-task 1 — commit `feat(...)`>
+- <sub-task 2 — commit `fix(...)`>
 
-## Cómo se probó
+## How it was tested
 
-<Tests añadidos/ejecutados, verificación manual, resultado del verificador.>
+<Tests added/run, manual verification, verifier result.>
 
-## Notas para el revisor
+## Notes for the reviewer
 
-<Decisiones de diseño, trade-offs, áreas que merecen atención especial.>
+<Design decisions, trade-offs, areas that deserve special attention.>

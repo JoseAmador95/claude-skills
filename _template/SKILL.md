@@ -1,38 +1,38 @@
 ---
-name: <nombre-skill>
+name: <skill-name>
 description: >-
-  <Una o dos frases que expliquen qué hace esta skill y cuándo debe
-  activarse. El modelo usa este texto para decidir si invocarla.>
+  <One or two sentences explaining what this skill does and when it should
+  activate. The model uses this text to decide whether to invoke it.>
 ---
 
-# <Nombre legible de la skill>
+# <Readable skill name>
 
-<!-- Describe aquí el rol que toma el modelo al ejecutar esta skill. -->
+<!-- Describe here the role the model takes on when running this skill. -->
 
-## Objetivo
+## Goal
 
-<!-- Qué problema resuelve y qué resultado produce. -->
+<!-- What problem it solves and what result it produces. -->
 
-## Flujo
+## Flow
 
-<!-- Enumera las fases o pasos del flujo. Por ejemplo: -->
+<!-- List the phases or steps of the flow. For example: -->
 
-1. **Análisis** — ...
-2. **Planificación** — ...
-3. **Implementación** — ...
-4. **Verificación** — ...
+1. **Analysis** — ...
+2. **Planning** — ...
+3. **Implementation** — ...
+4. **Verification** — ...
 
-## Subagentes
+## Subagents
 
-<!-- Lista los subagentes que usa este flujo y en qué fase se invocan.
-     Sus definiciones viven en agents/. -->
+<!-- List the subagents this flow uses and which phase they're invoked in.
+     Their definitions live in agents/. -->
 
-| Subagente | Fase | Qué hace |
+| Subagent | Phase | What it does |
 |---|---|---|
-| `<nombre-agente>` | Fase X | ... |
+| `<agent-name>` | Phase X | ... |
 
-## Reglas y restricciones
+## Rules and constraints
 
-<!-- Qué no debe hacer el modelo aunque pueda. -->
+<!-- What the model must not do even though it could. -->
 
 - ...

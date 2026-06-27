@@ -1,33 +1,33 @@
-# Log de tarea: <título>
+# Task log: <title>
 
-- **Tarea**: <descripción en una frase>
-- **Fuente**: <issue #N | archivo md | chat>
-- **Rama**: <feat/...>
-- **Inicio**: <YYYY-MM-DD HH:MM>
+- **Task**: <one-sentence description>
+- **Source**: <issue #N | md file | chat>
+- **Branch**: <feat/...>
+- **Start**: <YYYY-MM-DD HH:MM>
 
 ---
 
-## [<YYYY-MM-DD HH:MM>] Fase <N> — <nombre> · <cierre de fase | evento: info clave / error / bug / decisión / desviación>
+## [<YYYY-MM-DD HH:MM>] Phase <N> — <name> · <phase close | event: key info / error / bug / decision / deviation>
 
-**Qué aprendió el agente**
+**What the agent learned**
 - 
 
-**Qué se debe hacer**
+**What needs to be done**
 - 
 
-**Cómo afecta al repo**
+**Repo impact**
 - 
 
-**Desviaciones del plan inicial**
-- (ninguna / describir)
+**Deviations from the initial plan**
+- (none / describe)
 
-**Conclusión**
+**Conclusion**
 - 
 
 ---
 
 <!--
-Escribe una entrada POR EVENTO, no solo al cerrar fases: cada vez que aparezca
-info clave, un error, un bug (afecte o no a la tarea, buscado o casual), una
-decisión o una desviación. Copia este bloque por cada entrada.
+Write an entry PER EVENT, not just when closing phases: every time key info,
+an error, a bug (whether or not it affects the task, intentional or accidental),
+a decision, or a deviation appears. Copy this block for each entry.
 -->

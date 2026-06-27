@@ -1,29 +1,29 @@
-# NNNN — <título de la decisión>
+# NNNN — <decision title>
 
-- **Estado**: Propuesto | Aceptado | Reemplazado por ADR-XXXX
-- **Fecha**: <YYYY-MM-DD>
-- **Tarea / Issue**: #<N>
+- **Status**: Proposed | Accepted | Superseded by ADR-XXXX
+- **Date**: <YYYY-MM-DD>
+- **Task / Issue**: #<N>
 
-## Contexto
+## Context
 
-Qué problema o necesidad motivó esta decisión. El estado de las cosas antes.
+What problem or need motivated this decision. The state of things before.
 
-## Decisión
+## Decision
 
-Qué se decidió hacer, y las alternativas consideradas con por qué se descartaron.
+What was decided, and the alternatives considered with why they were discarded.
 
-## Consecuencias
+## Consequences
 
-Lo bueno y lo malo que trae esta decisión. Qué se vuelve más fácil y qué más difícil.
+The good and the bad this decision brings. What becomes easier and what becomes harder.
 
-## Cambios al workflow
+## Workflow changes
 
-Cómo cambia la forma de trabajar del equipo, si aplica.
+How it changes the way the team works, if applicable.
 
-## Limitaciones
+## Limitations
 
-Qué NO resuelve esta decisión. Restricciones conocidas y deuda asumida a propósito.
+What this decision does NOT solve. Known constraints and debt taken on intentionally.
 
-## Decisiones que tomó el usuario
+## Decisions the user made
 
-Respuestas y elecciones del usuario (fase de aclaración) que moldearon el resultado.
+Answers and choices by the user (clarification phase) that shaped the outcome.

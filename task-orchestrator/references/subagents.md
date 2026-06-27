@@ -1,26 +1,26 @@
-# Configuración de subagentes
+# Subagent configuration
 
-Este archivo detalla los cuatro subagentes del flujo. Cópialos a `.claude/agents/`
-(versión canónica en la carpeta `agents/` de esta skill) o lánzalos inline con la
-tool `Task` usando estos mismos prompts.
+This file details the four subagents in the flow. Copy them to `.claude/agents/`
+(the canonical version lives in the `agents/` folder of this skill) or launch them
+inline with the `Task` tool using these same prompts.
 
-## Por qué subagentes y no hacerlo todo en la sesión principal
+## Why subagents instead of doing everything in the main session
 
-Un subagente corre en su **propia ventana de contexto** y devuelve solo su
-resultado a la sesión principal. Esto te compra dos cosas:
+A subagent runs in its **own context window** and returns only its result to the
+main session. This buys you two things:
 
-1. **Aislamiento de contexto**: el analyzer puede leer 30 archivos y devolverte
-   una página de resumen. Si lo hicieras en tu contexto, esos 30 archivos se
-   quedarían ocupando atención el resto de la sesión (context rot).
-2. **Independencia de juicio**: el verifier no ve tu razonamiento, así que no
-   hereda tus sesgos ni tus errores.
+1. **Context isolation**: the analyzer can read 30 files and hand you back a
+   one-page summary. If you did this in your own context, those 30 files would
+   stay occupying attention for the rest of the session (context rot).
+2. **Independence of judgment**: the verifier doesn't see your reasoning, so it
+   doesn't inherit your biases or your mistakes.
 
-## Selección de esfuerzo (effort) por subagente
+## Effort selection per subagent
 
-Además del modelo, puedes fijar el **esfuerzo de razonamiento por agente** con el
-campo `effort` del frontmatter: `low | medium | high | max | inherit`. Es lo que
-permite que el analyzer y el implementer piensen lo justo (medium) mientras el
-verifier piensa a fondo (high), sin pagar latencia de más donde no hace falta.
+Beyond the model, you can set the **reasoning effort per agent** with the
+`effort` field in the frontmatter: `low | medium | high | max | inherit`. This is
+what lets the analyzer and the implementer think just enough (medium) while the
+verifier thinks deeply (high), without paying extra latency where it isn't needed.
 
 ```yaml
 ---
@@ -30,184 +30,187 @@ effort: high
 ---
 ```
 
-Matices importantes:
-- El campo `effort` en frontmatter es **relativamente reciente**. Durante buena
-  parte de 2026 el único control era la variable global `CLAUDE_CODE_EFFORT_LEVEL`
-  (afecta a toda la sesión por igual). Verifica que tu versión de Claude Code
-  respeta el `effort` por agente; si no, sube de versión o usa el método de abajo.
-- **Variar el esfuerzo por sub-tarea dentro del mismo agente** (simple vs
-  compleja) no se hace bien solo con frontmatter, porque es un valor fijo del
-  archivo. Dos opciones robustas: (a) mantener dos variantes del implementer (una
-  estándar `sonnet`/`medium` y una `task-implementer-deep` `opus`/`high`), o
-  (b) embeber palabras clave de thinking en el prompt de invocación —
-  "think" < "think hard" < "think harder" < "ultrathink"— que escalan el
-  presupuesto de razonamiento de esa invocación concreta.
-- Relacionado con el modelo: `model: inherit` usa el modelo de la sesión
-  principal; `CLAUDE_CODE_SUBAGENT_MODEL` fija un default para todos los
-  subagentes que heredan.
+Important nuances:
+- The `effort` field in frontmatter is **relatively recent**. For much of 2026
+  the only control was the global variable `CLAUDE_CODE_EFFORT_LEVEL` (which
+  affects the entire session uniformly). Verify that your version of Claude Code
+  respects the per-agent `effort`; if it doesn't, upgrade or use the method below.
+- **Varying effort per sub-task within the same agent** (simple vs. complex) is
+  not done well with frontmatter alone, because it's a fixed value in the file.
+  Two robust options: (a) keep two variants of the implementer (a standard
+  `sonnet`/`medium` one and a `task-implementer-deep` `opus`/`high` one), or
+  (b) embed thinking keywords in the invocation prompt —
+  "think" < "think hard" < "think harder" < "ultrathink" — which scale the
+  reasoning budget of that specific invocation.
+- Related to the model: `model: inherit` uses the main session's model;
+  `CLAUDE_CODE_SUBAGENT_MODEL` sets a default for all subagents that inherit.
 
-## Navegación de código vía MCP (preferir sobre grep)
+## Code navigation via MCP (prefer over grep)
 
-Si hay un servidor MCP de navegación o LSP conectado (Serena, un LSP MCP, etc.),
-el analyzer debe preferir sus herramientas semánticas (símbolos,
-go-to-definition, find-references, jerarquía de tipos) sobre `grep`/`glob`:
-entiende la estructura del código en vez de hacer coincidencia de texto, lo que
-es más preciso y gasta menos contexto.
+If there's a navigation or LSP MCP server connected (Serena, an LSP MCP, etc.),
+the analyzer should prefer its semantic tools (symbols, go-to-definition,
+find-references, type hierarchy) over `grep`/`glob`: it understands the structure
+of the code instead of doing text matching, which is more precise and spends less
+context.
 
-Gotcha de instalación: un subagente con `tools` como allowlist **no ve** las
-herramientas MCP a menos que las añadas explícitamente. Tienes dos vías:
+Installation gotcha: a subagent with `tools` as an allowlist **does not see** the
+MCP tools unless you add them explicitly. You have two routes:
 
 ```yaml
-# Vía 1: añadir las tools MCP al allowlist (nombres mcp__<servidor>__<tool>)
+# Route 1: add the MCP tools to the allowlist (names mcp__<server>__<tool>)
 tools: Read, Grep, Glob, Bash, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols
 
-# Vía 2: declarar el servidor en el frontmatter
+# Route 2: declare the server in the frontmatter
 mcpServers:
   serena: { command: "uvx", args: ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server"] }
 ```
 
-Comprueba con `/mcp` qué servidores y herramientas tienes disponibles antes de
-asumir que el analyzer puede navegar semánticamente.
+Check with `/mcp` which servers and tools you have available before assuming the
+analyzer can navigate semantically.
 
 ---
 
-## 1. task-analyzer (Fase 3)
+## 1. task-analyzer (Phase 3)
 
-**Propósito**: mapear las partes del repo relevantes a la tarea, sin tocar nada.
+**Purpose**: map the parts of the repo relevant to the task, without touching
+anything.
 
-**Modelo: `sonnet`. Esfuerzo: `medium`.** El análisis es recuperación +
-comprensión + síntesis, no razonamiento profundo de varios pasos. Sonnet acierta
-el equilibrio coste/calidad. Opus encarece sin ganancia real para explorar; Haiku
-encuentra archivos pero flaquea al sintetizar relaciones entre muchos. Escala a
-`opus`/`high` solo si el área es genuinamente intrincada (algoritmia densa, código
-heredado sin tests).
+**Model: `sonnet`. Effort: `medium`.** Analysis is retrieval + comprehension +
+synthesis, not deep multi-step reasoning. Sonnet hits the right cost/quality
+balance. Opus is more expensive with no real gain for exploring; Haiku finds
+files but falters at synthesizing relationships across many of them. Scale up to
+`opus`/`high` only if the area is genuinely intricate (dense algorithms, legacy
+code without tests).
 
-**Tools**: `Read, Grep, Glob, Bash` (+ herramientas de navegación MCP si las hay,
-ver sección anterior). El Bash es **solo lectura**: `git log`, `git blame`,
-`git diff`, `rg`, `ls`, `cat`, listar tests. **Sin Write/Edit/MultiEdit** — la
-garantía estructural de que un explorador no muta el repo. Prefiere navegación
-semántica MCP sobre `grep` cuando esté disponible.
+**Tools**: `Read, Grep, Glob, Bash` (+ MCP navigation tools if available, see the
+previous section). Bash is **read-only**: `git log`, `git blame`, `git diff`,
+`rg`, `ls`, `cat`, listing tests. **No Write/Edit/MultiEdit** — the structural
+guarantee that an explorer doesn't mutate the repo. Prefer semantic MCP
+navigation over `grep` when available.
 
-**Paralelismo**: lanza varios a la vez, uno por subsistema, con alcances que no
-se solapen. Es el mayor acelerador del flujo: lectura pesada en paralelo, contextos
-aislados.
+**Parallelism**: launch several at once, one per subsystem, with scopes that
+don't overlap. It's the biggest accelerator of the flow: heavy reading in
+parallel, isolated contexts.
 
-**Qué debe devolver** (pídeselo explícito):
-- Archivos y módulos que la tarea tocará.
-- Flujo de datos relevante y dependencias.
-- Patrones/convenciones existentes a imitar (con rutas de ejemplo).
-- Tests actuales que cubren la zona y huecos de cobertura.
-- Riesgos y efectos colaterales potenciales.
-- **Lista de sub-tareas propuestas**, marcando cada una como `simple` o `compleja`
-  (algoritmia / concurrencia / seguridad / migración de datos). Esta marca decide
-  el modelo del implementer en la fase 5.
+**What it should return** (ask for it explicitly):
+- Files and modules the task will touch.
+- Relevant data flow and dependencies.
+- Existing patterns/conventions to imitate (with example paths).
+- Current tests covering the area and coverage gaps.
+- Risks and potential side effects.
+- **List of proposed sub-tasks**, marking each one as `simple` or `complex`
+  (algorithms / concurrency / security / data migration). This mark decides the
+  implementer's model in phase 5.
 
 ---
 
-## 2. task-implementer (Fase 5)
+## 2. task-implementer (Phase 5)
 
-**Propósito**: implementar UNA sub-tarea atómica con sus tests. El orquestador
-asigna uno por sub-tarea y **puede correr varios a la vez**: cada implementer es
-una unidad de trabajo independiente, así que escalas lanzando más, no haciendo uno
-más grande.
+**Purpose**: implement ONE atomic sub-task with its tests. The orchestrator
+assigns one per sub-task and **can run several at once**: each implementer is an
+independent unit of work, so you scale by launching more, not by making one
+bigger.
 
-**Modelo y esfuerzo**: `sonnet`/`medium` por defecto (cubre el 70-90% del
-trabajo). Usa **`opus`/`high`** para las sub-tareas que el analyzer marcó como
-`compleja`. Decisión por sub-tarea, no global: no malgastes Opus en boilerplate
-ni te quedes corto con Sonnet en un algoritmo delicado. Como el frontmatter es
-fijo, para variar por sub-tarea usa una variante `task-implementer-deep` o embebe
-"think harder"/"ultrathink" en la invocación (ver sección de esfuerzo arriba).
+**Model and effort**: `sonnet`/`medium` by default (covers 70-90% of the work).
+Use **`opus`/`high`** for the sub-tasks the analyzer marked as `complex`. Decide
+per sub-task, not globally: don't waste Opus on boilerplate nor fall short with
+Sonnet on a delicate algorithm. Since the frontmatter is fixed, to vary per
+sub-task use a `task-implementer-deep` variant or embed "think harder"/"ultrathink"
+in the invocation (see the effort section above).
 
-**Tools**: `Read, Write, Edit, MultiEdit, Bash, Grep, Glob`. **No** incluyas
-capacidad de push ni de abrir PRs: los efectos externos los controla el
-orquestador con gate de usuario.
+**Tools**: `Read, Write, Edit, MultiEdit, Bash, Grep, Glob`. Do **not** include
+push capability or the ability to open PRs: external effects are controlled by the
+orchestrator with a user gate.
 
-**Contexto acotado**: dale solo (a) la spec de su sub-tarea, (b) la porción del
-informe del analyzer que le concierne, y (c) las convenciones del repo (de
-CLAUDE.md). No le pases la conversación entera. Un contexto fresco y enfocado
-produce mejor código que uno saturado.
+**Bounded context**: give it only (a) the spec of its sub-task, (b) the portion of
+the analyzer's report that concerns it, and (c) the repo conventions (from
+CLAUDE.md). Don't pass it the entire conversation. A fresh, focused context
+produces better code than a saturated one.
 
-**Responsabilidad de tests**: cada implementer corre los tests y el linter de su
-slice y reporta verde/rojo. El **commit lo hace el orquestador** (fase 8), para
-controlar granularidad y mensaje. Alternativamente, si paralelizas con worktrees,
-cada implementer commitea en su propia rama.
+**Test responsibility**: each implementer runs the tests and the linter for its
+slice and reports green/red. The **commit is made by the orchestrator** (phase 8),
+to control granularity and message. Alternatively, if you parallelize with
+worktrees, each implementer commits on its own branch.
 
-### Varios implementers en paralelo (con git worktrees)
+### Several implementers in parallel (with git worktrees)
 
-Lanza varios implementers a la vez cuando las sub-tareas sean independientes
-(módulos separados, sin archivos compartidos). Para aislarlos de verdad, da a cada
-uno su `git worktree`: un checkout aislado que comparte el mismo `.git`:
+Launch several implementers at once when the sub-tasks are independent (separate
+modules, no shared files). To isolate them for real, give each one its own
+`git worktree`: an isolated checkout that shares the same `.git`:
 
 ```bash
 git worktree add ../proj-subtask-a -b subtask-a
 git worktree add ../proj-subtask-b -b subtask-b
 ```
 
-Lanzas un implementer por worktree en paralelo; al terminar, mergeas las ramas
-secuencialmente. El cuello de botella es el merge: con archivos compartidos
-aparecen conflictos, así que 5-10 agentes es el límite práctico. En Claude Code
-puedes usar `claude --worktree` y subagentes con `isolation: worktree`. Si las
-sub-tareas tocan los mismos archivos, **no paralelices**: secuencial es más rápido
-en la práctica porque evitas el merge hell.
+You launch one implementer per worktree in parallel; when they finish, you merge
+the branches sequentially. The bottleneck is the merge: with shared files
+conflicts appear, so 5-10 agents is the practical limit. In Claude Code you can
+use `claude --worktree` and subagents with `isolation: worktree`. If the
+sub-tasks touch the same files, **don't parallelize**: sequential is faster in
+practice because you avoid merge hell.
 
 ---
 
-## 3. task-verifier (Fase 7a)
+## 3. task-verifier (Phase 7a)
 
-**Propósito**: dictaminar de forma independiente si la tarea cumple sus criterios
-de aceptación. Es el contrapeso al sesgo del orquestador. Juzga correctitud, nada
-más: no es pedante y no propone mejoras (eso es trabajo del soñador, abajo).
+**Purpose**: independently rule on whether the task meets its acceptance criteria.
+It's the counterweight to the orchestrator's bias. It judges correctness, nothing
+more: it isn't pedantic and doesn't propose improvements (that's the dreamer's
+job, below).
 
-**Modelo: `opus`. Esfuerzo: `high`.** Aquí sí: la verificación es donde más rinde
-el razonamiento fuerte, corre una sola vez por tarea, y su veredicto decide si hay
-re-trabajo. El coste está acotado. Sonnet es aceptable solo si el presupuesto
-aprieta. La postura es **escéptica y a ciegas** a propósito.
+**Model: `opus`. Effort: `high`.** Here it pays off: verification is where strong
+reasoning yields the most, it runs only once per task, and its verdict decides
+whether there's rework. The cost is bounded. Sonnet is acceptable only if the
+budget is tight. The stance is **skeptical and blind** on purpose.
 
-**Tools**: `Read, Grep, Glob, Bash` (correr tests, lint, build). **Sin Write/Edit**
-— su trabajo es juzgar, no arreglar. Si pudiera editar, "arreglaría" en silencio
-los huecos y perderías la señal.
+**Tools**: `Read, Grep, Glob, Bash` (run tests, lint, build). **No Write/Edit** —
+its job is to judge, not to fix. If it could edit, it would silently "fix" the
+gaps and you'd lose the signal.
 
-**Lo que recibe (y lo que NO)**:
-- ✅ Los criterios de aceptación originales (fase 1).
-- ✅ El diff real: `git diff <base>...HEAD`, y acceso a leer el código y ejecutar tests.
-- ❌ NO tu narrativa, NO el log, NO el razonamiento de los implementers.
+**What it receives (and what it does NOT)**:
+- ✅ The original acceptance criteria (phase 1).
+- ✅ The real diff: `git diff <base>...HEAD`, plus access to read the code and run tests.
+- ❌ NOT your narrative, NOT the log, NOT the implementers' reasoning.
 
-**Prompt con postura adversaria**: instrúyelo a asumir que la tarea NO está hecha
-y a probar lo contrario o enumerar huecos. Algo como: "Eres un revisor escéptico e
-independiente. No confíes en ninguna afirmación de que esto funciona; verifícalo
-contra los criterios y el código real."
+**Prompt with an adversarial stance**: instruct it to assume the task is NOT done
+and to prove otherwise or enumerate gaps. Something like: "You are a skeptical,
+independent reviewer. Don't trust any claim that this works; verify it against the
+criteria and the real code."
 
-**Salida**:
-- Veredicto: `PASS` / `PARTIAL` / `FAIL`.
-- Por cada criterio de aceptación: cumplido/no, con evidencia (archivo:línea, o
-  salida de test).
-- **Huecos**: defectos que bloquean el PASS, respecto a los criterios (accionables).
+**Output**:
+- Verdict: `PASS` / `PARTIAL` / `FAIL`.
+- For each acceptance criterion: met/not, with evidence (file:line, or test
+  output).
+- **Gaps**: defects that block the PASS, relative to the criteria (actionable).
 
-`PARTIAL` o `FAIL` → el orquestador vuelve a la fase 5 con los huecos como nuevas
-sub-tareas. No se avanza a commits/PR sin `PASS`.
+`PARTIAL` or `FAIL` → the orchestrator goes back to phase 5 with the gaps as new
+sub-tasks. You don't move on to commits/PR without a `PASS`.
 
 ---
 
-## 4. task-dreamer (Fase 7b, opcionalmente fase 4)
+## 4. task-dreamer (Phase 7b, optionally phase 4)
 
-**Propósito**: aportar ideas y mejoras. Es el rol generativo que se separó del
-verificador. Donde el verificador es escéptico, ciego y bloqueante, el soñador es
-expansivo, bien informado y **nunca bloquea**.
+**Purpose**: contribute ideas and improvements. It's the generative role that was
+split off from the verifier. Where the verifier is skeptical, blind and blocking,
+the dreamer is expansive, well-informed and **never blocks**.
 
-**Modelo: `opus`. Esfuerzo: `high`.** Las buenas ideas (pensamiento divergente y
-luego filtrado) son justo donde rinde el modelo fuerte. Corre una vez, coste acotado.
+**Model: `opus`. Effort: `high`.** Good ideas (divergent thinking and then
+filtering) are exactly where the strong model pays off. It runs once, bounded cost.
 
-**Tools**: `Read, Grep, Glob, Bash` de solo lectura (+ navegación MCP si la hay).
-**Sin Write/Edit**: propone, no implementa.
+**Tools**: `Read, Grep, Glob, Bash`, read-only (+ MCP navigation if available).
+**No Write/Edit**: it proposes, it doesn't implement.
 
-**Lo que recibe** (lo contrario del verificador — cuanto más contexto, mejor):
-el objetivo de la tarea, el informe del analyzer, y el diff si ya se implementó.
+**What it receives** (the opposite of the verifier — the more context, the
+better): the task's objective, the analyzer's report, and the diff if it's
+already been implemented.
 
-**Salida**: lista de ideas, cada una con valor, impacto/esfuerzo, y cuándo
-(`ahora` / `follow-up` / `algún día`), ordenadas por valor. Si no hay nada que
-mejorar, que lo diga — es válido.
+**Output**: a list of ideas, each with value, impact/effort, and when
+(`now` / `follow-up` / `someday`), ordered by value. If there's nothing to
+improve, it should say so — that's valid.
 
-El orquestador lleva las ideas al usuario, que decide por cada una: aplicarla ahora
-(se vuelve sub-tarea → fase 5 → re-verificar), diferirla a un issue nuevo, o
-descartarla. Como no bloquea, el soñador puede correr en paralelo al verificador,
-o en la fase 4 para que sus ideas sobre el enfoque entren en el plan aprobado.
+The orchestrator brings the ideas to the user, who decides on each one: apply it
+now (it becomes a sub-task → phase 5 → re-verify), defer it to a new issue, or
+discard it. Since it doesn't block, the dreamer can run in parallel with the
+verifier, or in phase 4 so that its ideas about the approach make it into the
+approved plan.

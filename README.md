@@ -1,47 +1,53 @@
 # Skills
 
-Repositorio de **skills de Claude Code** y sus dependencias (subagentes y
-comandos), empaquetadas como **bundles autocontenidos**: cada skill es una
-carpeta de primer nivel que lleva dentro todo lo que necesita.
+A repository of **Claude Code skills** and their dependencies (subagents and
+commands), packaged as **self-contained bundles**: each skill is a top-level
+folder that carries everything it needs inside it.
 
-## Skills disponibles
+## Available skills
 
 ### [`task-orchestrator/`](task-orchestrator/)
 
-Orquesta una tarea de desarrollo de principio a fin con un flujo disciplinado:
-análisis del repo con subagentes, plan con gate de aprobación, implementación
-delegada, verificación independiente y escéptica, commits atómicos, PR y
-vigilancia del CI.
+Orchestrates a development task end to end with a disciplined workflow: repo
+analysis with subagents, a plan with an approval gate, delegated implementation,
+independent and skeptical verification, atomic commits, a PR, and CI watching. The
+workflow is a triage phase (phase 0) plus 12 numbered phases (1–12).
 
-El bundle es autocontenido:
+The bundle is self-contained:
 
-| Ruta | Qué es |
+| Path | What it is |
 |---|---|
-| `SKILL.md` | La skill (el flujo de 12 fases). |
-| `INSTALL.md` | Cómo instalarla a nivel proyecto o usuario. |
-| `agents/` | Los 4 subagentes: `task-analyzer`, `task-implementer`, `task-verifier`, `task-dreamer`. |
-| `commands/task-execute.md` | Comando de relevo para ejecutar un plan aprobado en una sesión fresca. |
-| `hooks/` | Gates deterministas: bloqueo de la rama default, tests antes de push, auto-formato. |
-| `assets/` | Plantillas (log de tarea, ADR, cuerpo de PR). |
-| `references/` | Documentación de apoyo (subagentes, logging, ADRs). |
+| `SKILL.md` | The skill (the triage + 12-phase workflow). |
+| `INSTALL.md` | How to install it at the project or user level. |
+| `install.sh` | Idempotent installer that wires up the whole bundle. |
+| `agents/` | The 4 subagents: `task-analyzer`, `task-implementer`, `task-verifier`, `task-dreamer`. |
+| `commands/` | `task.md` (`/task`, the fast entry point) and `task-execute.md` (relay to run an approved plan in a fresh session). |
+| `hooks/` | Deterministic gates: block the default branch, tests before push, auto-format. |
+| `assets/` | Templates (task log, ADR, PR body). |
+| `references/` | Supporting documentation (subagents, logging, ADRs). |
 
-**Instalación:** ver [`task-orchestrator/INSTALL.md`](task-orchestrator/INSTALL.md).
-Resumen a nivel usuario:
+**Install:** the quickest way is the bundled installer (see
+[`task-orchestrator/INSTALL.md`](task-orchestrator/INSTALL.md) for all options):
 
 ```bash
-cp -r task-orchestrator ~/.claude/skills/
-cp task-orchestrator/agents/*.md ~/.claude/agents/
-cp task-orchestrator/commands/task-execute.md ~/.claude/commands/
+./task-orchestrator/install.sh            # install into ~/.claude (user level)
+./task-orchestrator/install.sh --project  # install into ./.claude (project level)
+./task-orchestrator/install.sh --link     # symlinks: a 'git pull' updates the install
+./task-orchestrator/install.sh --dry-run  # show what it would do
 ```
 
-## Estructura del repositorio
+Once installed, kick off a task with the `/task` command (or `/task <issue #>`).
+
+## Repository structure
 
 ```
 .
 ├── README.md
-└── task-orchestrator/        # bundle autocontenido (una carpeta por skill)
+├── IDEAS.md                  # backlog of proposed skills and improvements
+└── task-orchestrator/        # self-contained bundle (one folder per skill)
     ├── SKILL.md
     ├── INSTALL.md
+    ├── install.sh
     ├── agents/
     ├── commands/
     ├── hooks/
@@ -49,5 +55,7 @@ cp task-orchestrator/commands/task-execute.md ~/.claude/commands/
     └── references/
 ```
 
-Para añadir otra skill, créala como una carpeta hermana de `task-orchestrator/`
-con la misma convención.
+To add another skill, create it as a sibling folder of `task-orchestrator/`
+following the same convention (start from `_template/`). See
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Ideas for future skills live in
+[`IDEAS.md`](IDEAS.md).

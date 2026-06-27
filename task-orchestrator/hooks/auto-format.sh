@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# PostToolUse (matcher: Write|Edit|MultiEdit). Formatea el archivo recién editado
-# con el formateador que corresponda a su extensión. Silencioso y no bloqueante:
-# si el formateador no está instalado, no hace nada. Requiere `jq`.
+# PostToolUse (matcher: Write|Edit|MultiEdit). Formats the just-edited file
+# with the formatter matching its extension. Silent and non-blocking:
+# if the formatter is not installed, it does nothing. Requires `jq`.
 set -uo pipefail
 input=$(cat)
 command -v jq >/dev/null 2>&1 || { exit 0; }

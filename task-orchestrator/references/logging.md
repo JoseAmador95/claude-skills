@@ -1,66 +1,67 @@
-# Logging de la tarea
+# Task logging
 
-El log es la fuente de verdad del progreso, persistente fuera de tu ventana de
-contexto. Si la sesión se alarga o pierdes el hilo, lo reconstruyes leyendo el log.
+The log is the source of truth for progress, persistent outside your context
+window. If the session drags on or you lose the thread, you reconstruct it by
+reading the log.
 
-## Ubicación
+## Location
 
-`.task-logs/<slug>-<YYYY-MM-DD>.md`, donde `<slug>` es un nombre corto derivado
-de la tarea (p. ej. `google-oauth`). Antes de crearlo, asegura que `.task-logs/`
-está en `.gitignore`:
+`.task-logs/<slug>-<YYYY-MM-DD>.md`, where `<slug>` is a short name derived from
+the task (e.g. `google-oauth`). Before creating it, make sure `.task-logs/` is in
+`.gitignore`:
 
 ```bash
 grep -qxF '.task-logs/' .gitignore || echo '.task-logs/' >> .gitignore
 ```
 
-Alternativa: si prefieres no dejar archivos, puedes usar la tool de memoria de
-Claude Code para el mismo contenido. El archivo gitignored es la opción por
-defecto porque es inspeccionable y portable entre sesiones.
+Alternative: if you prefer not to leave files behind, you can use Claude Code's
+memory tool for the same content. The gitignored file is the default option
+because it's inspectable and portable across sessions.
 
-## Cuándo escribir (por evento, no solo por fase)
+## When to write (per event, not just per phase)
 
-El log se escribe **a lo largo de todas las fases, cada vez que pasa algo
-relevante**, no únicamente al cerrar cada fase. Dispara una entrada nueva cuando
-ocurra cualquiera de estos:
+The log is written **throughout all phases, every time something relevant
+happens**, not only when closing each phase. Trigger a new entry whenever any of
+these occurs:
 
-- Información clave aprendida (del análisis, de la implementación, del CI).
-- Un **error o bug**, ya afecte directamente a la tarea o lo hayas encontrado de
-  casualidad mientras hacías otra cosa. Anótalo aunque no lo vayas a arreglar
-  ahora: un bug colateral sin registrar es un bug perdido.
-- Una **decisión** (tuya o del usuario) y su porqué.
-- Una **desviación** respecto al plan aprobado.
-- El cierre de cada fase (entrada de resumen).
+- Key information learned (from analysis, from implementation, from CI).
+- An **error or bug**, whether it directly affects the task or you found it by
+  chance while doing something else. Note it down even if you're not going to fix
+  it now: an unrecorded side bug is a lost bug.
+- A **decision** (yours or the user's) and its why.
+- A **deviation** from the approved plan.
+- The closing of each phase (summary entry).
 
-La regla mental: si dentro de una semana quisieras saber "¿por qué se hizo esto
-así?" o "¿de dónde salió este bug?", debe estar en el log en el momento en que
-ocurrió.
+The mental rule: if a week from now you'd want to know "why was this done this
+way?" or "where did this bug come from?", it should be in the log at the moment it
+happened.
 
-## Estructura de cada entrada
+## Structure of each entry
 
-Cada entrada (de cierre de fase o de evento puntual) usa
-`assets/task-log.template.md`. Campos por entrada:
+Each entry (phase-closing or one-off event) uses `assets/task-log.template.md`.
+Fields per entry:
 
-- **Timestamp**: fecha y hora.
-- **Fase**: número y nombre de la fase del workflow.
-- **Qué aprendió el agente**: hallazgos relevantes (del análisis, de la
-  implementación, del CI…).
-- **Qué se debe hacer**: acciones derivadas, pendientes.
-- **Cómo afecta al repo**: archivos/módulos impactados, efectos colaterales.
-- **Desviaciones del plan inicial**: cualquier cambio respecto a lo previsto y por
-  qué (esto es de lo más valioso del log).
-- **Conclusión**: estado al cerrar la fase.
+- **Timestamp**: date and time.
+- **Phase**: number and name of the workflow phase.
+- **What the agent learned**: relevant findings (from analysis, from
+  implementation, from CI…).
+- **What should be done**: derived actions, pending items.
+- **How it affects the repo**: impacted files/modules, side effects.
+- **Deviations from the initial plan**: any change from what was planned and why
+  (this is one of the most valuable things in the log).
+- **Conclusion**: state at the close of the phase.
 
-## Mirroring a GitHub (opt-in)
+## Mirroring to GitHub (opt-in)
 
-Si la tarea viene de un issue, puedes reflejar cada entrada como comentario del
-issue para dejar traza pública del progreso. **Es opt-in**: pregunta primero al
-usuario, porque escribe en el issue y eso es un efecto externo visible.
+If the task comes from an issue, you can mirror each entry as a comment on the
+issue to leave a public trace of progress. **It's opt-in**: ask the user first,
+because it writes to the issue and that's a visible external effect.
 
-Si lo acepta:
+If they accept:
 
 ```bash
-gh issue comment <n> --body-file <ruta-a-la-entrada.md>
+gh issue comment <n> --body-file <path-to-the-entry.md>
 ```
 
-Mantén el archivo local como registro completo y publica cada entrada nueva como
-comentario. No publiques secretos ni rutas internas sensibles en comentarios públicos.
+Keep the local file as the complete record and publish each new entry as a
+comment. Don't publish secrets or sensitive internal paths in public comments.

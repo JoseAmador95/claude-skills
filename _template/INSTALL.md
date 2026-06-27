@@ -1,63 +1,63 @@
-# Instalación — <nombre-skill>
+# Install — <skill-name>
 
-<!-- Descripción breve de qué instala este bundle. -->
+<!-- Short description of what this bundle installs. -->
 
-## 1. Instalar la skill
+## 1. Install the skill
 
-A nivel de proyecto (se comparte con el equipo vía git):
+At the project level (shared with the team via git):
 
 ```bash
 mkdir -p .claude/skills
-cp -r <nombre-skill> .claude/skills/
+cp -r <skill-name> .claude/skills/
 ```
 
-O a nivel de usuario (todas tus sesiones):
+Or at the user level (all your sessions):
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -r <nombre-skill> ~/.claude/skills/
+cp -r <skill-name> ~/.claude/skills/
 ```
 
-## 2. Instalar los subagentes
+## 2. Install the subagents
 
 ```bash
-# proyecto
-cp <nombre-skill>/agents/*.md .claude/agents/
+# project
+cp <skill-name>/agents/*.md .claude/agents/
 
-# o usuario
-cp <nombre-skill>/agents/*.md ~/.claude/agents/
+# or user
+cp <skill-name>/agents/*.md ~/.claude/agents/
 ```
 
-<!-- Si no hay subagentes, elimina esta sección. -->
+<!-- If there are no subagents, delete this section. -->
 
-## 3. Instalar los comandos (si los hay)
+## 3. Install the commands (if any)
 
 ```bash
 mkdir -p .claude/commands
-cp <nombre-skill>/commands/*.md .claude/commands/
+cp <skill-name>/commands/*.md .claude/commands/
 ```
 
-<!-- Si no hay comandos, elimina esta sección. -->
+<!-- If there are no commands, delete this section. -->
 
-## 4. Instalar los hooks (si los hay)
+## 4. Install the hooks (if any)
 
 ```bash
-chmod +x .claude/skills/<nombre-skill>/hooks/*.sh
-# Fusiona hooks/settings.snippet.json en .claude/settings.json
+chmod +x .claude/skills/<skill-name>/hooks/*.sh
+# Merge hooks/settings.snippet.json into .claude/settings.json
 ```
 
-<!-- Si no hay hooks, elimina esta sección. -->
+<!-- If there are no hooks, delete this section. -->
 
-## 5. Requisitos
+## 5. Requirements
 
-<!-- Lista las dependencias externas (CLI, herramientas, etc.). -->
+<!-- List the external dependencies (CLI, tools, etc.). -->
 
 - ...
 
-## 6. Uso
+## 6. Usage
 
-<!-- Cómo invocar la skill dentro de Claude Code. -->
+<!-- How to invoke the skill inside Claude Code. -->
 
 ```
-<Ejemplo de prompt o comando slash>
+<Example prompt or slash command>
 ```

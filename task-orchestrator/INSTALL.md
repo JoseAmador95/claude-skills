@@ -1,83 +1,107 @@
-# Instalación — task-orchestrator
+# Install — task-orchestrator
 
-Esta carpeta es una **skill de Claude Code** más sus cuatro subagentes y plantillas.
+This folder is a **Claude Code skill** plus its four subagents, two commands, and
+templates.
 
-## 1. Instalar la skill
+## Quick install (recommended): `install.sh`
 
-A nivel de proyecto (se comparte con el equipo vía git):
+The bundled installer automates every step below and is **idempotent** (re-running
+leaves the same state, with no duplicated hooks):
+
+```bash
+./task-orchestrator/install.sh            # install into ~/.claude (user level)
+./task-orchestrator/install.sh --project  # install into ./.claude (project level)
+./task-orchestrator/install.sh --link     # symlinks: a 'git pull' updates the install
+./task-orchestrator/install.sh --dry-run  # show what it would do without touching anything
+```
+
+It installs the skill, the agents, the commands, makes the hooks executable, and
+merges `hooks/settings.snippet.json` into `settings.json` (needs `jq` for the
+merge — without it, it tells you the one manual step). Verify with `/agents`
+inside Claude Code that `task-analyzer`, `task-implementer`, `task-verifier`, and
+`task-dreamer` show up.
+
+If you'd rather do it by hand, the manual steps follow.
+
+## 1. Install the skill
+
+At the project level (shared with the team via git):
 
 ```bash
 mkdir -p .claude/skills
 cp -r task-orchestrator .claude/skills/
 ```
 
-O a nivel de usuario (todas tus sesiones):
+Or at the user level (all your sessions):
 
 ```bash
 mkdir -p ~/.claude/skills
 cp -r task-orchestrator ~/.claude/skills/
 ```
 
-## 2. Instalar los subagentes
+## 2. Install the subagents
 
-Los subagentes van en `.claude/agents/` (no dentro de la skill):
+The subagents go in `.claude/agents/` (not inside the skill):
 
 ```bash
-# proyecto
+# project
 cp task-orchestrator/agents/*.md .claude/agents/
-# o usuario
+# or user
 cp task-orchestrator/agents/*.md ~/.claude/agents/
 ```
 
-Verifica con `/agents` dentro de Claude Code que aparezcan `task-analyzer`,
-`task-implementer`, `task-verifier` y `task-dreamer`.
+Verify with `/agents` inside Claude Code that `task-analyzer`,
+`task-implementer`, `task-verifier`, and `task-dreamer` show up.
 
-> Si prefieres no instalar los agentes como archivos, puedes borrar la carpeta
-> `agents/` del bundle: el SKILL.md también explica cómo lanzar subagentes
-> equivalentes con la tool `Task` y prompts inline (ver `references/subagents.md`).
+> If you'd rather not install the agents as files, you can delete the bundle's
+> `agents/` folder: SKILL.md also explains how to launch equivalent subagents with
+> the `Task` tool and inline prompts (see `references/subagents.md`).
 
-## 3. Instalar los hooks (gates deterministas, opcional pero recomendado)
+## 3. Install the hooks (deterministic gates, optional but recommended)
 
-Los hooks imponen las reglas que no quieres dejar a criterio del modelo:
-bloquear commits/push en la rama default, exigir tests en verde antes de push, y
-auto-formatear lo editado.
+The hooks enforce the rules you don't want left to the model's discretion: block
+commits/push on the default branch, require green tests before push, and
+auto-format what's edited.
 
 ```bash
-# Los scripts ya vienen en la skill; solo hay que cablearlos en settings.json.
-# Pega el contenido de hooks/settings.snippet.json en .claude/settings.json
-# (fusionándolo con tus hooks existentes si los hay).
-chmod +x .claude/skills/task-orchestrator/hooks/*.sh   # por si acaso
+# The scripts already ship with the skill; you just wire them into settings.json.
+# Paste the contents of hooks/settings.snippet.json into .claude/settings.json
+# (merging it with your existing hooks if any).
+chmod +x .claude/skills/task-orchestrator/hooks/*.sh   # just in case
 ```
 
-Requieren `jq`. El comando de test del gate de push se ajusta con la env var
-`TASK_TEST_CMD` (default `npm test`). Los hooks fallan "en seguro": si falta `jq`
-o un formateador, no rompen nada.
+They require `jq`. The push gate's test command is set with the `TASK_TEST_CMD`
+env var (default `npm test`). The hooks fail "safe": if `jq` or a formatter is
+missing, they don't break anything.
 
-## 4. Instalar el comando de relevo (opcional)
+## 4. Install the commands
 
-Para el reset duro de contexto (ejecutar un plan aprobado en sesión fresca):
+The skill ships two slash commands:
+
+- `/task` — the fast entry point: starts the full workflow from phase 0.
+- `/task-execute <slug>` — relay to run an already-approved plan in a fresh
+  session (hard context reset).
 
 ```bash
 mkdir -p .claude/commands
-cp task-orchestrator/commands/task-execute.md .claude/commands/
+cp task-orchestrator/commands/*.md .claude/commands/
 ```
 
-Uso: en una sesión nueva, `/task-execute <slug>`.
+## 5. Requirements
 
-## 5. Requisitos
+- `gh` (GitHub CLI) authenticated, for issues, PRs, and CI.
+- `git` with worktrees (included in modern git) if you use the parallel pattern.
+- `jq` for the hooks and the installer's settings merge. Optional formatters
+  (prettier, ruff, gofmt…) depending on your stack.
 
-- `gh` (GitHub CLI) autenticado, para issues, PRs y CI.
-- `git` con worktrees (incluido en git moderno) si usas el patrón paralelo.
-- `jq` para los hooks. Formateadores opcionales (prettier, ruff, gofmt…) según tu stack.
+## 6. Usage
 
-## 6. Uso
-
-Dentro de Claude Code:
+Inside Claude Code:
 
 ```
-Trabaja el issue #42 siguiendo el workflow de task-orchestrator
+/task 42
 ```
 
-o simplemente describe una tarea y pide "resuélvela con el flujo completo". La
-skill se encarga de las 12 fases, deteniéndose a pedir aprobación antes de hacer
-push, abrir el PR y mergear.
+or just describe a task and ask to "resolve it with the full flow". The skill
+handles the triage phase plus the 12 numbered phases (0–12), stopping to ask for
+approval before pushing, opening the PR, and merging.

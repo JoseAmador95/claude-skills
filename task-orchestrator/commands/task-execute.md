@@ -1,20 +1,20 @@
 ---
-description: Ejecuta un plan de tarea ya aprobado en una sesión fresca (reset duro de contexto)
-argument-hint: <slug del plan, p. ej. google-oauth>
+description: Execute an already-approved task plan in a fresh session (hard context reset)
+argument-hint: "<plan slug, e.g. google-oauth>"
 ---
 
-Vas a ejecutar un plan de implementación ya aprobado, en una sesión limpia. Este
-es el "reset duro" de contexto: no arrastras la conversación de planificación,
-solo el plan en disco.
+You are about to execute an already-approved implementation plan in a clean
+session. This is the "hard reset" of context: you don't carry over the planning
+conversation, only the plan on disk.
 
-1. Lee el plan en `.task-logs/$1.plan.md` y el log en `.task-logs/$1-*.md`.
-2. Retoma el flujo de `task-orchestrator` a partir de la **FASE 5**
-   (implementación): el análisis, las preguntas y el plan ya están hechos y
-   aprobados; no los repitas.
-3. Mantén las mismas reglas: rama de feature, implementers por sub-tarea
-   (paralelo/secuencial según el plan), verificador estricto (tope 3 rondas),
-   soñador, docs/ADR, commits atómicos, y gates de usuario para push/PR/merge.
-4. Sigue registrando en el log por evento.
+1. Read the plan in `.task-logs/$1.plan.md` and the log in `.task-logs/$1-*.md`.
+2. Resume the `task-orchestrator` workflow from **Phase 5** (implementation): the
+   analysis, the questions, and the plan are already done and approved — don't
+   repeat them.
+3. Keep the same rules: feature branch, one implementer per sub-task
+   (parallel/sequential per the plan), strict verifier (max 3 rounds), dreamer,
+   docs/ADR, atomic commits, and user gates for push/PR/merge.
+4. Keep logging by event.
 
-Si el plan o el log no existen, dilo y no inventes: probablemente la tarea no
-llegó a aprobar plan y hay que empezar por la FASE 0.
+If the plan or the log don't exist, say so and don't make things up: the task
+probably never got its plan approved, and you should start from Phase 0.

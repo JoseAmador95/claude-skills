@@ -1,54 +1,55 @@
-# Contribuir a este repositorio
+# Contributing to this repository
 
-Gracias por tu interés en contribuir. Este documento explica las convenciones
-del repo para que cualquier skill nueva encaje sin fricciones con las existentes.
+Thanks for your interest in contributing. This document explains the repo's
+conventions so that any new skill fits in with the existing ones without friction.
 
 ---
 
-## Principio fundamental: el bundle autocontenido
+## Core principle: the self-contained bundle
 
-Cada skill es una **carpeta de primer nivel** que lleva dentro todo lo que
-necesita para funcionar: la skill propiamente dicha, sus subagentes, sus
-comandos slash, sus hooks, sus plantillas y su documentación de apoyo. No hay
-dependencias implícitas entre skills distintas.
+Each skill is a **top-level folder** that carries everything it needs to work: the
+skill itself, its subagents, its slash commands, its hooks, its templates, and its
+supporting documentation. There are no implicit dependencies between different
+skills.
 
 ```
-<nombre-skill>/
-├── SKILL.md              # La skill (frontmatter + instrucciones del flujo)
-├── INSTALL.md            # Cómo instalarla
-├── agents/               # Subagentes del flujo (dependencias internas)
+<skill-name>/
+├── SKILL.md              # The skill (frontmatter + workflow instructions)
+├── INSTALL.md            # How to install it
+├── install.sh            # Optional installer that automates INSTALL.md
+├── agents/               # Workflow subagents (internal dependencies)
 │   └── *.md
-├── commands/             # Comandos slash (dependencias internas)
+├── commands/             # Slash commands (internal dependencies)
 │   └── *.md
-├── hooks/                # Scripts de gate deterministas
+├── hooks/                # Deterministic gate scripts
 │   ├── *.sh
 │   └── settings.snippet.json
-├── assets/               # Plantillas que usa la skill en tiempo de ejecución
-└── references/           # Documentación de apoyo (no se instala, es guía)
+├── assets/               # Templates the skill uses at runtime
+└── references/           # Supporting documentation (not installed, it's guidance)
 ```
 
-### Qué va en cada carpeta
+### What goes in each folder
 
-| Carpeta | Contenido |
+| Folder | Contents |
 |---|---|
-| `agents/` | Un `.md` por subagente. Son **dependencias del flujo**: viven dentro del bundle y se copian a `.claude/agents/` al instalar. |
-| `commands/` | Un `.md` por comando slash. También son dependencias internas; se copian a `.claude/commands/` al instalar. |
-| `hooks/` | Scripts bash que se cablea en `settings.json`. Incluye `settings.snippet.json` con el fragmento listo para fusionar. |
-| `assets/` | Plantillas (markdown, JSON, YAML…) que la skill crea o lee en tiempo de ejecución. |
-| `references/` | Documentación de apoyo que el modelo puede leer pero que no se instala en ningún lado. |
+| `agents/` | One `.md` per subagent. They are **workflow dependencies**: they live inside the bundle and are copied to `.claude/agents/` on install. |
+| `commands/` | One `.md` per slash command. Also internal dependencies; copied to `.claude/commands/` on install. |
+| `hooks/` | Bash scripts wired into `settings.json`. Includes `settings.snippet.json` with the ready-to-merge fragment. |
+| `assets/` | Templates (markdown, JSON, YAML…) the skill creates or reads at runtime. |
+| `references/` | Supporting documentation the model can read but that isn't installed anywhere. |
 
 ---
 
-## Frontmatter requerido
+## Required frontmatter
 
 ### `SKILL.md`
 
 ```yaml
 ---
-name: <nombre-skill>          # identificador único, kebab-case
+name: <skill-name>            # unique identifier, kebab-case
 description: >-
-  Una o dos frases. Explica qué hace la skill y cuándo usarla. El
-  modelo leerá esto para decidir si activarla.
+  One or two sentences. Explain what the skill does and when to use it. The
+  model reads this to decide whether to activate it.
 ---
 ```
 
@@ -56,73 +57,85 @@ description: >-
 
 ```yaml
 ---
-name: <nombre-agente>         # kebab-case
+name: <agent-name>            # kebab-case
 description: >-
-  Qué hace este subagente y en qué fase del flujo se usa.
-tools: Read, Bash, Edit       # lista separada por comas
-model: sonnet                 # o haiku, opus, etc.
+  What this subagent does and which phase of the flow it's used in.
+tools: Read, Bash, Edit       # comma-separated list
+model: sonnet                 # or haiku, opus, etc.
+effort: medium                # optional; if present must be low|medium|high|max|inherit
 ---
 ```
 
-El CI valida que estos campos existan. Un PR con frontmatter incompleto no
-pasará la comprobación.
+### `commands/*.md`
+
+```yaml
+---
+description: One sentence describing what the command does.
+argument-hint: "<expected argument>"   # optional
+---
+```
+
+CI validates that these fields exist (and that `effort`, if present, is a valid
+value). A PR with incomplete frontmatter won't pass the check.
 
 ---
 
-## Anadir una skill nueva
+## Adding a new skill
 
-1. **Copia la plantilla:**
+1. **Copy the template:**
 
    ```bash
-   cp -r _template/ <nombre-skill>/
+   cp -r _template/ <skill-name>/
    ```
 
-2. **Rellena `SKILL.md`** — pon el `name`, `description` y el contenido del
-   flujo en el cuerpo.
+2. **Fill in `SKILL.md`** — set the `name`, `description`, and the workflow
+   content in the body.
 
-3. **Escribe los subagentes** en `agents/`. Cada archivo es un `.md` con
-   frontmatter válido y las instrucciones del subagente en el cuerpo.
+3. **Write the subagents** in `agents/`. Each file is a `.md` with valid
+   frontmatter and the subagent's instructions in the body.
 
-4. **Escribe los comandos** en `commands/` si la skill necesita comandos slash.
+4. **Write the commands** in `commands/` if the skill needs slash commands.
 
-5. **Rellena `INSTALL.md`** con los pasos específicos de tu skill (qué copiar,
-   en qué orden, requisitos).
+5. **Fill in `INSTALL.md`** with your skill's specific steps (what to copy, in
+   what order, requirements). Optionally add an `install.sh` to automate them.
 
-6. **Elimina las carpetas vacías** que no necesites (o déjalas con su
-   `.gitkeep` si las vas a necesitar después).
+6. **Delete the empty folders** you don't need (or leave them with their
+   `.gitkeep` if you'll need them later).
 
-7. **Actualiza `README.md`** en la raíz añadiendo tu skill a la tabla de
-   disponibles.
+7. **Update `README.md`** at the root by adding your skill to the available table.
 
 ---
 
-## Cómo instalar y probar
+## How to install and test
 
-Consulta el `INSTALL.md` de cada skill para los pasos exactos. El patrón
-general es:
+See each skill's `INSTALL.md` for the exact steps. Bundles that ship an
+`install.sh` automate the whole thing:
 
 ```bash
-# instalar la skill
-cp -r <nombre-skill>/ ~/.claude/skills/
-
-# instalar subagentes
-cp <nombre-skill>/agents/*.md ~/.claude/agents/
-
-# instalar comandos (si los hay)
-cp <nombre-skill>/commands/*.md ~/.claude/commands/
+./<skill-name>/install.sh            # install into ~/.claude (user level)
+./<skill-name>/install.sh --project  # install into ./.claude (project level)
 ```
 
-Próximamente cada bundle incluirá un `install.sh` que automatiza estos pasos.
-Hasta entonces, sigue el `INSTALL.md` de la skill correspondiente.
+Without the script, the general pattern is:
+
+```bash
+# install the skill
+cp -r <skill-name>/ ~/.claude/skills/
+
+# install subagents
+cp <skill-name>/agents/*.md ~/.claude/agents/
+
+# install commands (if any)
+cp <skill-name>/commands/*.md ~/.claude/commands/
+```
 
 ---
 
-## Estilo y convenciones de escritura
+## Writing style and conventions
 
-- Los docs van en **español** (este repo, sus README e INSTALL.md).
-- Los archivos de agentes y comandos pueden ir en el idioma que mejor sirva al
-  modelo, pero el frontmatter (`name`, `description`) va siempre en español si
-  describe comportamiento orientado al usuario.
-- Nombres de carpetas y de skills en **kebab-case**.
-- No rompas la convención de bundle autocontenido: si tu skill necesita algo de
-  otra skill, documenta esa dependencia explícitamente en su `INSTALL.md`.
+- Docs are written in the **language of the project**. This repo is in **English**,
+  so keep new content in English to match; a skill authored for a different-language
+  project should follow that project's language instead.
+- Folder and skill names in **kebab-case**.
+- Don't break the self-contained bundle convention: if your skill needs something
+  from another skill, document that dependency explicitly in its `INSTALL.md`.
