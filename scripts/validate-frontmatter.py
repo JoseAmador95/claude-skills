@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Validate YAML frontmatter in skill and agent markdown files.
+"""Validate YAML frontmatter in skill, agent, and command markdown files.
 
 Rules:
   - <skill>/SKILL.md           must have: name, description
   - <skill>/agents/*.md        must have: name, description, tools, model
+                               and, if present, effort must be a valid value
+  - <skill>/commands/*.md      must have: description
 
 Frontmatter is the block between the first pair of --- delimiters at the top
 of the file.  We parse only the top-level scalar keys that appear at column 0
@@ -13,7 +15,6 @@ while correctly handling multi-line block scalars (>-, |-, etc.).
 Exit 0 if all files pass; exit 1 otherwise.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -22,22 +23,25 @@ from pathlib import Path
 # Frontmatter extraction
 # ---------------------------------------------------------------------------
 
-def extract_frontmatter_keys(path: Path) -> set[str] | None:
-    """Return the set of top-level YAML keys found in the frontmatter block.
+def extract_frontmatter(path: Path) -> dict[str, str] | None:
+    """Return the top-level YAML keys (mapped to their inline scalar value).
 
+    The value is the text after the first colon on the key's line, stripped.
+    For block scalars (``key: >-``) the value is the indicator (``>-``); the
+    folded body lives on indented continuation lines we deliberately skip.
     Returns None if the file has no frontmatter (does not start with ---).
     """
     try:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         print(f"  ERROR: cannot read {path}: {exc}", file=sys.stderr)
-        return set()
+        return {}
 
     lines = text.splitlines()
     if not lines or lines[0].rstrip() != "---":
         return None
 
-    keys: set[str] = set()
+    fm: dict[str, str] = {}
     for line in lines[1:]:
         stripped = line.rstrip()
         if stripped == "---":
@@ -46,11 +50,12 @@ def extract_frontmatter_keys(path: Path) -> set[str] | None:
         # contains a colon.  We deliberately skip lines that start with
         # whitespace (continuation of block scalars) or that are blank.
         if line and not line[0].isspace() and ":" in line:
-            key = line.split(":", 1)[0].strip()
+            key, value = line.split(":", 1)
+            key = key.strip()
             if key:
-                keys.add(key)
+                fm[key] = value.strip()
 
-    return keys
+    return fm
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +86,41 @@ def find_skill_dirs(root: Path) -> list[Path]:
 
 SKILL_REQUIRED = {"name", "description"}
 AGENT_REQUIRED = {"name", "description", "tools", "model"}
+COMMAND_REQUIRED = {"description"}
+EFFORT_VALID = {"low", "medium", "high", "max", "inherit"}
+
+
+def check_file(
+    path: Path,
+    root: Path,
+    required: set[str],
+    errors: list[str],
+    checked: list[str],
+) -> None:
+    """Validate one markdown file's frontmatter against a required key set."""
+    rel = path.relative_to(root)
+    fm = extract_frontmatter(path)
+    if fm is None:
+        errors.append(f"{rel}: missing frontmatter (file must start with ---)")
+        return
+
+    missing = required - fm.keys()
+    if missing:
+        errors.append(f"{rel}: missing required keys: {', '.join(sorted(missing))}")
+        return
+
+    # effort is optional, but if declared it must be a known value.  It is a
+    # relatively new subagent field; we validate the value without requiring
+    # the key, so older setups and the scaffold template keep passing.
+    effort = fm.get("effort")
+    if effort is not None and effort not in EFFORT_VALID:
+        errors.append(
+            f"{rel}: invalid effort '{effort}' "
+            f"(expected one of: {', '.join(sorted(EFFORT_VALID))})"
+        )
+        return
+
+    checked.append(str(rel))
 
 
 def validate(root: Path) -> bool:
@@ -95,39 +135,19 @@ def validate(root: Path) -> bool:
 
     for skill_dir in skill_dirs:
         # --- SKILL.md ---
-        skill_md = skill_dir / "SKILL.md"
-        keys = extract_frontmatter_keys(skill_md)
-        rel = skill_md.relative_to(root)
-        if keys is None:
-            errors.append(f"{rel}: missing frontmatter (file must start with ---)")
-        else:
-            missing = SKILL_REQUIRED - keys
-            if missing:
-                errors.append(
-                    f"{rel}: missing required keys: {', '.join(sorted(missing))}"
-                )
-            else:
-                checked.append(str(rel))
+        check_file(skill_dir / "SKILL.md", root, SKILL_REQUIRED, errors, checked)
 
         # --- agents/*.md ---
         agents_dir = skill_dir / "agents"
         if agents_dir.is_dir():
             for agent_md in sorted(agents_dir.glob("*.md")):
-                rel_a = agent_md.relative_to(root)
-                keys_a = extract_frontmatter_keys(agent_md)
-                if keys_a is None:
-                    errors.append(
-                        f"{rel_a}: missing frontmatter (file must start with ---)"
-                    )
-                else:
-                    missing_a = AGENT_REQUIRED - keys_a
-                    if missing_a:
-                        errors.append(
-                            f"{rel_a}: missing required keys: "
-                            f"{', '.join(sorted(missing_a))}"
-                        )
-                    else:
-                        checked.append(str(rel_a))
+                check_file(agent_md, root, AGENT_REQUIRED, errors, checked)
+
+        # --- commands/*.md ---
+        commands_dir = skill_dir / "commands"
+        if commands_dir.is_dir():
+            for command_md in sorted(commands_dir.glob("*.md")):
+                check_file(command_md, root, COMMAND_REQUIRED, errors, checked)
 
     if errors:
         print("FAIL — frontmatter validation errors:")
