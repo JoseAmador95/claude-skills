@@ -175,6 +175,16 @@ else
     # Strip the '//' comment keys from the snippet before merging.
     snippet_clean=$(jq 'del(.["//"], .["//paths"])' "$SNIPPET")
 
+    # The snippet hardcodes hook paths under '$CLAUDE_PROJECT_DIR/.claude', which
+    # only resolves for a project-level install. For a user-level install the
+    # skill lives at $TARGET (~/.claude), so rewrite the path prefix to $TARGET.
+    if [ "$MODE" != "project" ]; then
+      snippet_clean=$(printf '%s' "$snippet_clean" | jq --arg t "$TARGET" '
+        walk(if type == "object" and has("command")
+             then .command |= sub("\\$CLAUDE_PROJECT_DIR/\\.claude"; $t)
+             else . end)')
+    fi
+
     if [ -f "$SETTINGS" ]; then
       current=$(cat "$SETTINGS")
     else

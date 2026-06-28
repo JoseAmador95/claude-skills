@@ -1,6 +1,6 @@
 {
   "//": "Paste this into .claude/settings.json (or merge it with your existing hooks).",
-  "//paths": "Assumes the skill is installed at .claude/skills/task-orchestrator/. Adjust if you put it under ~/.claude/.",
+  "//paths": "Paths assume a project-level install ($CLAUDE_PROJECT_DIR/.claude/...). install.sh rewrites the prefix to ~/.claude for a --user install; if you paste this by hand at user level, replace $CLAUDE_PROJECT_DIR/.claude with your ~/.claude path.",
   "hooks": {
     "PreToolUse": [
       {
