@@ -4,6 +4,11 @@ This file details the four subagents in the flow. Copy them to `.claude/agents/`
 (the canonical version lives in the `agents/` folder of this skill) or launch them
 inline with the `Task` tool using these same prompts.
 
+The **source of truth** for each agent's `model`, `effort` and `tools` is its
+frontmatter in `agents/*.md` (the CI validates it). The values quoted here and in
+the SKILL.md summary table mirror those files; if they ever differ, the agent file
+wins.
+
 ## Why subagents instead of doing everything in the main session
 
 A subagent runs in its **own context window** and returns only its result to the

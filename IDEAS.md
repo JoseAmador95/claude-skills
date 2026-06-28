@@ -36,7 +36,7 @@ commitment — pick from it when there's appetite.
 
 - **Worktree helper** — a small script to automate the `git worktree` isolation
   for parallel implementers (phase 5), instead of describing the pattern in prose.
-- **`/task-status` command** — summarize the current `.task-logs/<slug>` log
+- **`/task-status` command** — summarize the current `~/.claude/task-logs/<repo>/<slug>` log
   (which phase, open gaps, pending gates) at a glance.
 - **Auto-detect `TASK_TEST_CMD`** — infer the test command from
   `package.json` / `pyproject.toml` / `Makefile` instead of defaulting to

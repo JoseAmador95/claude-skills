@@ -6,17 +6,21 @@ reading the log.
 
 ## Location
 
-`.task-logs/<slug>-<YYYY-MM-DD>.md`, where `<slug>` is a short name derived from
-the task (e.g. `google-oauth`). Before creating it, make sure `.task-logs/` is in
-`.gitignore`:
+`~/.claude/task-logs/<repo>/<slug>-<YYYY-MM-DD>.md`, where `<repo>` is the
+repository name and `<slug>` is a short name derived from the task (e.g.
+`google-oauth`). The logs live **outside the repository**, under your home dir and
+namespaced per repo, so they never pollute the project tree and there's no
+`.gitignore` step. Resolve the directory once and reuse it for the log and the
+plan:
 
 ```bash
-grep -qxF '.task-logs/' .gitignore || echo '.task-logs/' >> .gitignore
+TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
+mkdir -p "$TASK_LOG_DIR"
 ```
 
-Alternative: if you prefer not to leave files behind, you can use Claude Code's
-memory tool for the same content. The gitignored file is the default option
-because it's inspectable and portable across sessions.
+Alternative: if you prefer not to leave files behind at all, you can use Claude
+Code's memory tool for the same content. The file under `~/.claude/task-logs/` is
+the default option because it's inspectable and portable across sessions.
 
 ## When to write (per event, not just per phase)
 

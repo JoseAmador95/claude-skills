@@ -7,7 +7,11 @@ You are about to execute an already-approved implementation plan in a clean
 session. This is the "hard reset" of context: you don't carry over the planning
 conversation, only the plan on disk.
 
-1. Read the plan in `.task-logs/$1.plan.md` and the log in `.task-logs/$1-*.md`.
+1. Resolve the task-log dir and read the plan and log from it:
+   ```bash
+   TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
+   ```
+   Read the plan in `$TASK_LOG_DIR/$1.plan.md` and the log in `$TASK_LOG_DIR/$1-*.md`.
 2. Resume the `task-orchestrator` workflow from **Phase 5** (implementation): the
    analysis, the questions, and the plan are already done and approved — don't
    repeat them.

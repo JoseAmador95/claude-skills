@@ -48,13 +48,17 @@ Full detail and the agent files are in `references/subagents.md`. Summary:
 | Subagent | Phase | Model | Effort | Tools | Writes code |
 |---|---|---|---|---|---|
 | `task-analyzer` | 3 | sonnet | medium | Read, Grep, Glob, Bash (read-only) + navigation MCP | NO |
-| `task-implementer` | 5 | sonnet (opus if complex) | medium (↑ high if complex) | Read, Write, Edit, Bash, Grep, Glob | YES |
+| `task-implementer` | 5 | sonnet (opus if complex) | medium (↑ high if complex) | Read, Write, Edit, MultiEdit, Bash, Grep, Glob | YES |
 | `task-verifier` | 7a | opus | high | Read, Grep, Glob, Bash (tests/lint/build) | NO |
 | `task-dreamer` | 7b (or 4) | opus | high | Read, Grep, Glob, Bash (read-only) | NO |
 
 The verifier and the dreamer are **opposite, separate agents**: the verifier
 judges correctness blind (no context, no improvement suggestions); the dreamer
 brings ideas with all the context it can get and never blocks.
+
+This table is a quick reference; the **source of truth** for each agent's
+model/effort/tools is its frontmatter in `agents/*.md` (the CI validates it). If
+they ever differ, the agent file wins — update the table to match it.
 
 The `effort` field (low/medium/high/max/inherit) is relatively new in subagent
 frontmatter; if your version doesn't honor it, control the effort by embedding
@@ -110,9 +114,15 @@ git switch -c feat/<slug>                  # create and switch to the feature br
 
 All the commits in phase 8 will go to this branch.
 
-**Create the log** `.task-logs/<slug>-<YYYY-MM-DD>.md` from
-`assets/task-log.template.md`. First, make sure `.task-logs/` is in `.gitignore`
-(add it if missing) — the log is noise for the repo but gold for you.
+**Create the log** `~/.claude/task-logs/<repo>/<slug>-<YYYY-MM-DD>.md` from
+`assets/task-log.template.md`. The logs live **outside the repo**, under your home
+dir, namespaced by repository — so they never pollute the project tree and there's
+no `.gitignore` step to remember. Resolve the directory once and reuse it:
+
+```bash
+TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
+mkdir -p "$TASK_LOG_DIR"        # holds both the log and the <slug>.plan.md
+```
 
 Each log entry carries: timestamp, phase, **what the agent learned**, **what needs
 to be done**, **repo impact**, **deviations from the initial plan**, and a
@@ -168,7 +178,8 @@ the testing approach, and the documentation/ADR that will be updated. **This pla
 is a gate**: don't move on to implementing without the user's explicit approval.
 If they ask for changes, adjust the plan and confirm again.
 
-When they approve it, **write the plan to `.task-logs/<slug>.plan.md`**. It's a
+When they approve it, **write the plan to `$TASK_LOG_DIR/<slug>.plan.md`**
+(same `~/.claude/task-logs/<repo>/` directory as the log). It's a
 durable artifact: from here on you and the subagents reference it **by path**,
 instead of reloading the whole planning conversation. That keeps the orchestrator
 thin (see the context note in phase 5).
@@ -206,7 +217,7 @@ Implementer config (detail in `references/subagents.md`):
 
 **Orchestrator context hygiene**: you are a control plane, not a worker. Don't
 re-read whole files or pile the code into your context: reference the plan
-(`.task-logs/<slug>.plan.md`) and the log by path, and let the heavy work live in
+(`$TASK_LOG_DIR/<slug>.plan.md`) and the log by path, and let the heavy work live in
 the subagents (fresh context) and on disk. This is the practical equivalent of
 "clear and reload": your window stays light throughout the run. If you want a real
 hard reset, use the optional handoff to a new session (see
