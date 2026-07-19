@@ -368,8 +368,7 @@ flaky one before "fixing".
 
 Report that it's green. **Don't merge automatically.** The merge is the user's
 decision: wait for their explicit instruction. When they ask, you can do the merge
-(`gh pr merge <n> --squash` or whatever option they prefer) and close the log with
-the final conclusion.
+(`gh pr merge <n>`) and close the log with the final conclusion.
 
 ---
 
