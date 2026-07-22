@@ -1,0 +1,12 @@
+{
+  "name": "task-orchestrator",
+  "description": "Orchestrate a development task end to end: triage, subagent analysis, an approval-gated plan, delegated implementation, independent verification, atomic commits, PR, and CI watching.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jose Amador"
+  },
+  "homepage": "https://github.com/JoseAmador95/claude-skills",
+  "repository": "https://github.com/JoseAmador95/claude-skills",
+  "license": "MIT",
+  "keywords": ["workflow", "orchestrator", "subagents", "code-review", "ci"]
+}

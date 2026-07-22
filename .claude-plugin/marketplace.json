@@ -1,0 +1,14 @@
+{
+  "name": "amador-skills",
+  "owner": {
+    "name": "Jose Amador"
+  },
+  "description": "Claude Code plugins for disciplined development workflows.",
+  "plugins": [
+    {
+      "name": "task-orchestrator",
+      "source": "./plugins/task-orchestrator",
+      "description": "End-to-end task workflow: analyze, plan, implement, verify, PR, and CI watching."
+    }
+  ]
+}
