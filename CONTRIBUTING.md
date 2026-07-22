@@ -1,141 +1,124 @@
 # Contributing to this repository
 
 Thanks for your interest in contributing. This document explains the repo's
-conventions so that any new skill fits in with the existing ones without friction.
+conventions so that any new plugin fits in with the existing ones without friction.
 
 ---
 
-## Core principle: the self-contained bundle
+## Core principle: one plugin per folder
 
-Each skill is a **top-level folder** that carries everything it needs to work: the
-skill itself, its subagents, its slash commands, its hooks, its templates, and its
-supporting documentation. There are no implicit dependencies between different
-skills.
+This repo is a **Claude Code plugin marketplace**. Each skill ships as a **plugin**
+under `plugins/<name>/` and is listed in `.claude-plugin/marketplace.json`. A plugin
+carries everything it needs — its skills, subagents, hooks, and templates — and
+Claude Code loads it natively via `/plugin`, so there is no installer to maintain.
 
 ```
-<skill-name>/
-├── SKILL.md              # The skill (frontmatter + workflow instructions)
-├── INSTALL.md            # How to install it
-├── install.sh            # Optional installer that automates INSTALL.md
-├── agents/               # Workflow subagents (internal dependencies)
-│   └── *.md
-├── commands/             # Slash commands (internal dependencies)
-│   └── *.md
-├── hooks/                # Deterministic gate scripts
-│   ├── *.sh
-│   └── settings.snippet.json
-├── assets/               # Templates the skill uses at runtime
-└── references/           # Supporting documentation (not installed, it's guidance)
+plugins/<plugin-name>/
+├── .claude-plugin/
+│   └── plugin.json          # manifest (name is the only required field)
+├── README.md                # how to install and use this plugin
+├── skills/
+│   └── <skill-name>/
+│       ├── SKILL.md         # frontmatter + instructions
+│       ├── references/      # supporting docs the model can read (inside the skill)
+│       └── assets/          # templates the skill reads/creates at runtime
+├── agents/                  # one .md per subagent
+└── hooks/
+    ├── hooks.json           # event → matcher → command wiring
+    └── *.sh                 # deterministic gate scripts
 ```
 
-### What goes in each folder
-
-| Folder | Contents |
-|---|---|
-| `agents/` | One `.md` per subagent. They are **workflow dependencies**: they live inside the bundle and are copied to `.claude/agents/` on install. |
-| `commands/` | One `.md` per slash command. Also internal dependencies; copied to `.claude/commands/` on install. |
-| `hooks/` | Bash scripts wired into `settings.json`. Includes `settings.snippet.json` with the ready-to-merge fragment. |
-| `assets/` | Templates (markdown, JSON, YAML…) the skill creates or reads at runtime. |
-| `references/` | Supporting documentation the model can read but that isn't installed anywhere. |
+`skills/`, `agents/`, and `hooks/` sit at the **plugin root** — only `plugin.json`
+goes inside `.claude-plugin/`. A skill's `references/` and `assets/` live **inside**
+its `skills/<name>/` folder so relative links from `SKILL.md` keep working.
 
 ---
 
 ## Required frontmatter
 
-### `SKILL.md`
+### `skills/<name>/SKILL.md`
 
 ```yaml
 ---
-name: <skill-name>            # unique identifier, kebab-case
+name: <skill-name>            # sets the /command name; kebab-case
 description: >-
-  One or two sentences. Explain what the skill does and when to use it. The
-  model reads this to decide whether to activate it.
+  One or two sentences: what the skill does and when it applies.
+disable-model-invocation: true                 # optional: manual-only (/name), no auto-trigger
+allowed-tools: Bash(git status *) Read Grep    # optional: pre-approve tools for the invoking turn
 ---
 ```
+
+A plugin skill is invoked as `/<plugin>:<name>`, and the short `/<name>` also works
+unless another command already claims it.
 
 ### `agents/*.md`
 
 ```yaml
 ---
-name: <agent-name>            # kebab-case
+name: <agent-name>            # kebab-case; invoked as <plugin>:<agent-name> or bare
 description: >-
-  What this subagent does and which phase of the flow it's used in.
-tools: Read, Bash, Edit       # comma-separated list
-model: sonnet                 # or haiku, opus, etc.
-effort: medium                # optional; if present must be low|medium|high|max|inherit
+  What this subagent does and which phase of the flow it is used in.
+tools: Read, Bash, Edit       # comma-separated allowlist (optional; omit to inherit all)
+model: sonnet                 # sonnet | opus | haiku | fable, or a full model id
+effort: medium                # optional; low | medium | high | xhigh | max | inherit
+color: cyan                   # optional display color
+isolation: worktree           # optional: run each invocation in its own git worktree
 ---
 ```
 
-### `commands/*.md`
+> **Plugin agents ignore `mcpServers`, `permissionMode`, and `hooks`** in their
+> frontmatter (a security restriction). To give a plugin agent MCP tools, add the
+> `mcp__<server>__*` names to its `tools` allowlist instead.
 
-```yaml
----
-description: One sentence describing what the command does.
-argument-hint: "<expected argument>"   # optional
----
-```
-
-CI validates that these fields exist (and that `effort`, if present, is a valid
-value). A PR with incomplete frontmatter won't pass the check.
+CI validates that `SKILL.md` has `name`+`description`, that each agent has
+`name`+`description`+`tools`+`model`, and that `effort` (if present) is valid.
 
 ---
 
-## Adding a new skill
+## Adding a new plugin
 
 1. **Copy the template:**
 
    ```bash
-   cp -r _template/ <skill-name>/
+   cp -r _template plugins/<plugin-name>
    ```
 
-2. **Fill in `SKILL.md`** — set the `name`, `description`, and the workflow
-   content in the body.
+2. **Fill in `.claude-plugin/plugin.json`** — set at least `name`.
 
-3. **Write the subagents** in `agents/`. Each file is a `.md` with valid
-   frontmatter and the subagent's instructions in the body.
+3. **Fill in the skill**: rename `skills/<skill-name>/` and write its `SKILL.md`
+   (name, description, body).
 
-4. **Write the commands** in `commands/` if the skill needs slash commands.
+4. **Add subagents** in `agents/` and **hooks** in `hooks/hooks.json` if the plugin
+   needs them; otherwise delete those folders.
 
-5. **Fill in `INSTALL.md`** with your skill's specific steps (what to copy, in
-   what order, requirements). Optionally add an `install.sh` to automate them.
+5. **Write `README.md`** with install (`/plugin install <name>@amador-skills`) and
+   usage.
 
-6. **Delete the empty folders** you don't need (or leave them with their
-   `.gitkeep` if you'll need them later).
+6. **List the plugin** in `.claude-plugin/marketplace.json` under `plugins`.
 
-7. **Update `README.md`** at the root by adding your skill to the available table.
+7. **Update the root `README.md`** to mention the new plugin.
 
 ---
 
-## How to install and test
+## How to test
 
-See each skill's `INSTALL.md` for the exact steps. Bundles that ship an
-`install.sh` automate the whole thing:
-
-```bash
-./<skill-name>/install.sh            # install into ~/.claude (user level)
-./<skill-name>/install.sh --project  # install into ./.claude (project level)
-```
-
-Without the script, the general pattern is:
+Validate the manifests and frontmatter the way CI does:
 
 ```bash
-# install the skill
-cp -r <skill-name>/ ~/.claude/skills/
-
-# install subagents
-cp <skill-name>/agents/*.md ~/.claude/agents/
-
-# install commands (if any)
-cp <skill-name>/commands/*.md ~/.claude/commands/
+python3 scripts/validate-plugins.py .              # marketplace + plugin.json structure
+python3 scripts/validate-frontmatter.py .          # SKILL.md and agents/*.md frontmatter
+claude plugin validate ./plugins/<name> --strict   # the full Claude Code check
 ```
+
+Try a plugin live without publishing: `claude --plugin-dir ./plugins/<name>`, or add
+the marketplace from a local path with `/plugin marketplace add ./`.
 
 ---
 
 ## Writing style and conventions
 
-- Docs are written in the **language of the project**. This repo is in **English**,
-  so keep new content in English to match; a skill authored for a different-language
-  project should follow that project's language instead.
-- Folder and skill names in **kebab-case**.
-- Don't break the self-contained bundle convention: if your skill needs something
-  from another skill, document that dependency explicitly in its `INSTALL.md`.
+- Docs are written in the **language of the project** — this repo is in **English**,
+  so keep new content in English.
+- Folder, plugin, skill, and agent names in **kebab-case**.
+- Keep hook scripts **fail-open**: if a tool like `jq` is missing, do not break the
+  workflow.

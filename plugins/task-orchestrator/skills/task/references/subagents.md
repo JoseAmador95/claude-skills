@@ -1,8 +1,8 @@
 # Subagent configuration
 
-This file details the four subagents in the flow. Copy them to `.claude/agents/`
-(the canonical version lives in the `agents/` folder of this skill) or launch them
-inline with the `Task` tool using these same prompts.
+This file details the four subagents in the flow. The plugin ships them (in its
+`agents/` folder), so they load automatically; you can also launch them inline with
+the `Task` tool using these same prompts.
 
 The **source of truth** for each agent's `model`, `effort` and `tools` is its
 frontmatter in `agents/*.md` (the CI validates it). The values quoted here and in

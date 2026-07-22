@@ -1,61 +1,74 @@
 # Skills
 
-A repository of **Claude Code skills** and their dependencies (subagents and
-commands), packaged as **self-contained bundles**: each skill is a top-level
-folder that carries everything it needs inside it.
+A repository of **Claude Code plugins** that package skills, subagents, slash
+commands, and hooks into installable units. It is a
+[plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces): each
+plugin lives under `plugins/` and is listed in `.claude-plugin/marketplace.json`.
 
-## Available skills
+## Install
 
-### [`task-orchestrator/`](task-orchestrator/)
+From inside Claude Code, add this marketplace once:
+
+```
+/plugin marketplace add JoseAmador95/claude-skills
+```
+
+then install any plugin from it:
+
+```
+/plugin install task-orchestrator@amador-skills
+```
+
+Run `/reload-plugins` (or restart) and the plugin's skills, agents, and hooks load
+automatically — no files to copy and no `settings.json` to edit.
+
+## Available plugins
+
+### [`task-orchestrator`](plugins/task-orchestrator/)
 
 Orchestrates a development task end to end with a disciplined workflow: repo
 analysis with subagents, a plan with an approval gate, delegated implementation,
 independent and skeptical verification, atomic commits, a PR, and CI watching. The
 workflow is a triage phase (phase 0) plus 12 numbered phases (1–12).
 
-The bundle is self-contained:
-
-| Path | What it is |
-|---|---|
-| `SKILL.md` | The skill (the triage + 12-phase workflow). |
-| `INSTALL.md` | How to install it at the project or user level. |
-| `install.sh` | Idempotent installer that wires up the whole bundle. |
-| `agents/` | The 4 subagents: `task-analyzer`, `task-implementer`, `task-verifier`, `task-dreamer`. |
-| `commands/` | `task.md` (`/task`, the fast entry point) and `task-execute.md` (relay to run an approved plan in a fresh session). |
-| `hooks/` | Deterministic gates: block the default branch, tests before push, auto-format. |
-| `assets/` | Templates (task log, ADR, PR body). |
-| `references/` | Supporting documentation (subagents, logging, ADRs). |
-
-**Install:** the quickest way is the bundled installer (see
-[`task-orchestrator/INSTALL.md`](task-orchestrator/INSTALL.md) for all options):
-
-```bash
-./task-orchestrator/install.sh            # install into ~/.claude (user level)
-./task-orchestrator/install.sh --project  # install into ./.claude (project level)
-./task-orchestrator/install.sh --link     # symlinks: a 'git pull' updates the install
-./task-orchestrator/install.sh --dry-run  # show what it would do
-```
-
-Once installed, kick off a task with the `/task` command (or `/task <issue #>`).
+Entry point: `/task <issue # | description>` (manual-only). See
+[`plugins/task-orchestrator/README.md`](plugins/task-orchestrator/README.md).
 
 ## Repository structure
 
 ```
 .
-├── README.md
-├── IDEAS.md                  # backlog of proposed skills and improvements
-└── task-orchestrator/        # self-contained bundle (one folder per skill)
-    ├── SKILL.md
-    ├── INSTALL.md
-    ├── install.sh
-    ├── agents/
-    ├── commands/
-    ├── hooks/
-    ├── assets/
-    └── references/
+├── .claude-plugin/
+│   └── marketplace.json      # the marketplace catalog
+├── plugins/
+│   └── task-orchestrator/    # one plugin per folder
+│       ├── .claude-plugin/plugin.json
+│       ├── skills/           # skills/<name>/SKILL.md (+ references/, assets/)
+│       ├── agents/           # subagents
+│       └── hooks/            # hooks.json + gate scripts
+├── _template/                # scaffold for a new plugin
+├── scripts/                  # CI validators (frontmatter, manifests)
+├── IDEAS.md                  # backlog of proposed plugins and improvements
+└── CONTRIBUTING.md
 ```
 
-To add another skill, create it as a sibling folder of `task-orchestrator/`
-following the same convention (start from `_template/`). See
-[`CONTRIBUTING.md`](CONTRIBUTING.md). Ideas for future skills live in
+To add another plugin, copy `_template/` into `plugins/<name>/`, fill it in, and
+list it in `.claude-plugin/marketplace.json`. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Ideas for future plugins live in
 [`IDEAS.md`](IDEAS.md).
+
+## Migrating from the old installer
+
+Earlier versions shipped a hand-rolled `install.sh` that copied files into
+`~/.claude`. That is gone — the plugin system replaces it. If you installed the old
+way, remove the leftovers before installing the plugin:
+
+```bash
+rm -rf ~/.claude/skills/task-orchestrator
+rm -f  ~/.claude/agents/task-analyzer.md ~/.claude/agents/task-implementer.md \
+       ~/.claude/agents/task-verifier.md ~/.claude/agents/task-dreamer.md
+rm -f  ~/.claude/commands/task.md ~/.claude/commands/task-execute.md
+```
+
+and delete the task-orchestrator hooks block you pasted into
+`~/.claude/settings.json`.

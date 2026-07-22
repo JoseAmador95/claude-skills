@@ -1,107 +1,59 @@
-# Install — task-orchestrator
+# task-orchestrator
 
-This folder is a **Claude Code skill** plus its four subagents, two commands, and
-templates.
+A Claude Code **plugin** that orchestrates a development task end to end: triage,
+repo analysis with subagents, an approval-gated plan, delegated implementation,
+independent verification, atomic commits, a PR, and CI watching.
 
-## Quick install (recommended): `install.sh`
+## Install
 
-The bundled installer automates every step below and is **idempotent** (re-running
-leaves the same state, with no duplicated hooks):
+From inside Claude Code, add the marketplace and install the plugin:
 
-```bash
-./task-orchestrator/install.sh            # install into ~/.claude (user level)
-./task-orchestrator/install.sh --project  # install into ./.claude (project level)
-./task-orchestrator/install.sh --link     # symlinks: a 'git pull' updates the install
-./task-orchestrator/install.sh --dry-run  # show what it would do without touching anything
+```
+/plugin marketplace add JoseAmador95/claude-skills
+/plugin install task-orchestrator@amador-skills
 ```
 
-It installs the skill, the agents, the commands, makes the hooks executable, and
-merges `hooks/settings.snippet.json` into `settings.json` (needs `jq` for the
-merge — without it, it tells you the one manual step). Verify with `/agents`
-inside Claude Code that `task-analyzer`, `task-implementer`, `task-verifier`, and
-`task-dreamer` show up.
+Then run `/reload-plugins` (or restart Claude Code). The plugin auto-loads its
+skills, agents, and hooks — there is nothing to copy by hand and no
+`settings.json` to edit.
 
-If you'd rather do it by hand, the manual steps follow.
+## Use
 
-## 1. Install the skill
-
-At the project level (shared with the team via git):
-
-```bash
-mkdir -p .claude/skills
-cp -r task-orchestrator .claude/skills/
+```
+/task 42              # work GitHub issue #42
+/task <description>   # or describe the task inline
 ```
 
-Or at the user level (all your sessions):
+`/task` is the entry point (its fully-qualified name is `/task-orchestrator:task`;
+the short `/task` works unless another command already claims that name). It runs
+the triage phase plus the 12 numbered phases (0–12), stopping for your explicit
+approval before pushing, opening the PR, and merging. To resume an already-approved
+plan in a fresh session, use `/task-execute <slug>`.
 
-```bash
-mkdir -p ~/.claude/skills
-cp -r task-orchestrator ~/.claude/skills/
-```
+Both entry points are **manual-only** (`disable-model-invocation`): the workflow
+starts when you invoke `/task`, never on its own.
 
-## 2. Install the subagents
+## What's inside
 
-The subagents go in `.claude/agents/` (not inside the skill):
+| Path | What it is |
+|---|---|
+| `skills/task/` | The workflow skill (triage + 12 phases) with its `references/` and `assets/`. |
+| `skills/task-execute/` | The relay skill to run an approved plan in a clean session. |
+| `agents/` | The four subagents: `task-analyzer`, `task-implementer`, `task-verifier`, `task-dreamer`. |
+| `hooks/` | Deterministic gates (`hooks.json` + scripts): block the default branch, tests before push, auto-format, plus SessionStart/SubagentStop bookkeeping. |
 
-```bash
-# project
-cp task-orchestrator/agents/*.md .claude/agents/
-# or user
-cp task-orchestrator/agents/*.md ~/.claude/agents/
-```
-
-Verify with `/agents` inside Claude Code that `task-analyzer`,
-`task-implementer`, `task-verifier`, and `task-dreamer` show up.
-
-> If you'd rather not install the agents as files, you can delete the bundle's
-> `agents/` folder: SKILL.md also explains how to launch equivalent subagents with
-> the `Task` tool and inline prompts (see `references/subagents.md`).
-
-## 3. Install the hooks (deterministic gates, optional but recommended)
-
-The hooks enforce the rules you don't want left to the model's discretion: block
-commits/push on the default branch, require green tests before push, and
-auto-format what's edited.
-
-```bash
-# The scripts already ship with the skill; you just wire them into settings.json.
-# Paste the contents of hooks/settings.snippet.json into .claude/settings.json
-# (merging it with your existing hooks if any).
-chmod +x .claude/skills/task-orchestrator/hooks/*.sh   # just in case
-```
-
-They require `jq`. The push gate's test command is set with the `TASK_TEST_CMD`
-env var (default `npm test`). The hooks fail "safe": if `jq` or a formatter is
-missing, they don't break anything.
-
-## 4. Install the commands
-
-The skill ships two slash commands:
-
-- `/task` — the fast entry point: starts the full workflow from phase 0.
-- `/task-execute <slug>` — relay to run an already-approved plan in a fresh
-  session (hard context reset).
-
-```bash
-mkdir -p .claude/commands
-cp task-orchestrator/commands/*.md .claude/commands/
-```
-
-## 5. Requirements
+## Requirements
 
 - `gh` (GitHub CLI) authenticated, for issues, PRs, and CI.
-- `git` with worktrees (included in modern git) if you use the parallel pattern.
-- `jq` for the hooks and the installer's settings merge. Optional formatters
-  (prettier, ruff, gofmt…) depending on your stack.
+- `git` (with worktrees, included in modern git) for the parallel-implementer pattern.
+- `jq` for the hooks. Optional formatters (prettier, ruff, gofmt…) for auto-format.
 
-## 6. Usage
+## Local development
 
-Inside Claude Code:
+Validate the plugin before publishing:
 
 ```
-/task 42
+claude plugin validate ./plugins/task-orchestrator --strict
 ```
 
-or just describe a task and ask to "resolve it with the full flow". The skill
-handles the triage phase plus the 12 numbered phases (0–12), stopping to ask for
-approval before pushing, opening the PR, and merging.
+Or try it live without a marketplace: `claude --plugin-dir ./plugins/task-orchestrator`.

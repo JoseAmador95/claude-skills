@@ -1,14 +1,13 @@
-# Carpeta hooks/
+# hooks/ directory
 #
-# Pon aquí los scripts bash que actúan como gates deterministas
-# (pre-commit, pre-push, post-tool-use, etc.) y el fragmento de
-# configuración listo para fusionar:
+# Put your deterministic gate scripts here (block-default-branch, tests-before-push,
+# auto-format, etc.) and wire them in hooks/hooks.json:
 #
-#   hooks/settings.snippet.json   ← fragmento para .claude/settings.json
-#   hooks/pre-push.sh             ← ejemplo de script
+#   hooks/hooks.json   ← event → matcher → command wiring
+#   hooks/*.sh         ← the scripts, referenced as "${CLAUDE_PLUGIN_ROOT}"/hooks/<name>.sh
 #
-# Todos los scripts deben ser ejecutables (chmod +x) y fallar "en seguro":
-# si falta una herramienta, no rompan el flujo de trabajo.
+# All scripts must be executable (chmod +x) and fail OPEN: if a tool is missing,
+# do not break the workflow.
 #
-# Borra este archivo cuando añadas tu primer hook real,
-# o elimina la carpeta entera si la skill no necesita hooks.
+# Delete this file when you add your first real hook, or remove the whole folder if
+# the plugin needs no hooks.

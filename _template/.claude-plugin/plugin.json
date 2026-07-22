@@ -1,0 +1,6 @@
+{
+  "name": "<plugin-name>",
+  "description": "<One sentence: what this plugin does.>",
+  "version": "0.1.0",
+  "license": "MIT"
+}

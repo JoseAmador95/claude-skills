@@ -1,0 +1,10 @@
+# references/ directory (inside the skill)
+#
+# Put supporting docs the model can read to understand the skill's context: pattern
+# guides, external API docs, design decisions. Reference them from SKILL.md with
+# relative links so they load on demand.
+#
+# This folder lives inside skills/<skill-name>/ so those relative links keep working.
+#
+# Delete this file when you add your first real reference, or remove the folder if
+# you need none.

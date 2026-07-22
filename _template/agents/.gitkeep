@@ -1,14 +1,20 @@
-# Carpeta agents/
+# agents/ directory
 #
-# Pon aquí un archivo .md por subagente que use tu skill.
-# Frontmatter requerido:
+# Put one .md file per subagent your plugin uses. They load automatically and are
+# namespaced by the plugin (e.g. <plugin>:<agent-name>).
+#
+# Required frontmatter:
 #
 #   ---
-#   name: <nombre-agente>
+#   name: <agent-name>
 #   description: >-
-#     Qué hace este subagente y cuándo se invoca.
-#   tools: Read, Bash, Edit   # herramientas que puede usar
-#   model: sonnet             # haiku | sonnet | opus
+#     What this subagent does and when it is invoked.
+#   tools: Read, Bash, Edit   # allowlist (optional; omit to inherit all)
+#   model: sonnet             # sonnet | opus | haiku | fable
 #   ---
 #
-# Borra este archivo cuando añadas tu primer agente real.
+# Note: plugin agents ignore an mcpServers/permissionMode/hooks block. To give an
+# agent MCP tools, add the mcp__<server>__* names to its `tools` allowlist.
+#
+# Delete this file when you add your first real agent, or remove the whole folder if
+# the plugin needs no subagents.

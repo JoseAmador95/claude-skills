@@ -65,9 +65,10 @@ they ever differ, the agent file wins — update the table to match it.
 The `effort` field (low/medium/high/xhigh/max/inherit) sets each subagent's
 reasoning budget independently of its model. Detail in `references/subagents.md`.
 
-Install all four in `.claude/agents/` (copy them from this skill's `agents/`). If
-you'd rather not install them, you can launch them with the `Task` tool and an
-equivalent inline prompt; the prompts are in `agents/`.
+The plugin ships all four agents, so they load automatically as `task-analyzer`,
+`task-implementer`, `task-verifier`, and `task-dreamer` (invoke them by bare name).
+If you'd rather run them ad hoc, launch them with the `Task` tool and an equivalent
+inline prompt; the prompts are in the plugin's `agents/`.
 
 ---
 
@@ -223,8 +224,8 @@ re-read whole files or pile the code into your context: reference the plan
 (`$TASK_LOG_DIR/<slug>.plan.md`) and the log by path, and let the heavy work live in
 the subagents (fresh context) and on disk. This is the practical equivalent of
 "clear and reload": your window stays light throughout the run. If you want a real
-hard reset, use the optional handoff to a new session (see
-`commands/task-execute.md`).
+hard reset, use the optional handoff to a new session (the `task-execute` skill,
+invoked as `/task-execute`).
 
 **Commits (preview of phase 8)**: keep one atomic commit per sub-task. If you
 parallelize in worktrees, each implementer commits on its own branch and you
@@ -387,8 +388,8 @@ Read these files when you reach the corresponding phase:
 Templates in `assets/`: `task-log.template.md`, `adr.template.md`,
 `pr-body.template.md`.
 
-**Deterministic gates (hooks)**: if installed (see `INSTALL.md` and `hooks/`),
-Claude Code enforces on its own — not depending on you — the block on commits/push
-on the default branch, the tests-before-push gate, and auto-formatting. If a push
-comes back blocked, don't force it: it means the tests are red or you're on the
-default branch. Treat them as allies, don't route around them.
+**Deterministic gates (hooks)**: the plugin ships hooks (`hooks/hooks.json`) that
+Claude Code loads automatically — not depending on you — enforcing the block on
+commits/push on the default branch, the tests-before-push gate, and auto-formatting.
+If a push comes back blocked, don't force it: it means the tests are red or you're on
+the default branch. Treat them as allies, don't route around them.

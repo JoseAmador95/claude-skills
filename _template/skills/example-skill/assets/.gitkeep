@@ -1,0 +1,10 @@
+# assets/ directory (inside the skill)
+#
+# Put the templates the skill creates or reads at runtime: task logs, ADRs, PR
+# bodies, etc. Common formats: .md, .json, .yaml, .txt. Reference them from SKILL.md
+# with relative links.
+#
+# This folder lives inside skills/<skill-name>/ so those relative links keep working.
+#
+# Delete this file when you add your first real template, or remove the folder if the
+# skill uses none.

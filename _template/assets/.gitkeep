@@ -1,9 +1,0 @@
-# Carpeta assets/
-#
-# Pon aquí las plantillas que la skill crea o lee en tiempo de ejecución:
-# logs de tarea, ADRs, cuerpos de PR, etc.
-#
-# Formatos habituales: .md, .json, .yaml, .txt
-#
-# Borra este archivo cuando añadas tu primera plantilla real,
-# o elimina la carpeta entera si la skill no usa plantillas.
