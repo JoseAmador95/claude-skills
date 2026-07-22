@@ -26,5 +26,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate SKILL.md, agents/*.md and commands/*.md frontmatter
+      - name: Validate SKILL.md and agents/*.md frontmatter
         run: python3 scripts/validate-frontmatter.py .
+
+  plugin-validate:
+    name: Validate plugin manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deterministic, dependency-free gate: the structure of marketplace.json
+      # and each plugin.json. Runs even when the claude CLI is unavailable in CI.
+      - name: Validate marketplace and plugin manifests
+        run: python3 scripts/validate-plugins.py .
+
+      # Best effort: the real `claude plugin validate` also checks skill/agent
+      # frontmatter and hooks.json, but it needs the CLI installed and may not run
+      # headless in every runner, so it is non-blocking; the step above gates CI.
+      - name: Claude Code plugin validation (best effort)
+        continue-on-error: true
+        run: |
+          if npm install -g @anthropic-ai/claude-code >/dev/null 2>&1 \
+             && command -v claude >/dev/null 2>&1; then
+            claude plugin validate . || true
+            claude plugin validate ./plugins/task-orchestrator --strict || true
+          else
+            echo 'claude CLI unavailable; the deterministic checks above cover CI.'
+          fi
