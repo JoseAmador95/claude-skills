@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse (matcher: Write|Edit|MultiEdit). Formats the just-edited file
+# PostToolUse (matcher: Write|Edit). Formats the just-edited file
 # with the formatter matching its extension. Silent and non-blocking:
 # if the formatter is not installed, it does nothing. Requires `jq`.
 set -uo pipefail

@@ -48,7 +48,7 @@ Full detail and the agent files are in `references/subagents.md`. Summary:
 | Subagent | Phase | Model | Effort | Tools | Writes code |
 |---|---|---|---|---|---|
 | `task-analyzer` | 3 | sonnet | medium | Read, Grep, Glob, Bash (read-only) + navigation MCP | NO |
-| `task-implementer` | 5 | sonnet (opus if complex) | medium (↑ high if complex) | Read, Write, Edit, MultiEdit, Bash, Grep, Glob | YES |
+| `task-implementer` | 5 | sonnet (opus if complex) | medium (↑ high if complex) | Read, Write, Edit, Bash, Grep, Glob | YES |
 | `task-verifier` | 7a | opus | high | Read, Grep, Glob, Bash (tests/lint/build) | NO |
 | `task-dreamer` | 7b (or 4) | opus | high | Read, Grep, Glob, Bash (read-only) | NO |
 
@@ -60,9 +60,8 @@ This table is a quick reference; the **source of truth** for each agent's
 model/effort/tools is its frontmatter in `agents/*.md` (the CI validates it). If
 they ever differ, the agent file wins — update the table to match it.
 
-The `effort` field (low/medium/high/max/inherit) is relatively new in subagent
-frontmatter; if your version doesn't honor it, control the effort by embedding
-thinking keywords in the invocation prompt. Detail in `references/subagents.md`.
+The `effort` field (low/medium/high/xhigh/max/inherit) sets each subagent's
+reasoning budget independently of its model. Detail in `references/subagents.md`.
 
 Install all four in `.claude/agents/` (copy them from this skill's `agents/`). If
 you'd rather not install them, you can launch them with the `Task` tool and an

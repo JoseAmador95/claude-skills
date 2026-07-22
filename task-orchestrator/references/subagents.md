@@ -23,7 +23,7 @@ main session. This buys you two things:
 ## Effort selection per subagent
 
 Beyond the model, you can set the **reasoning effort per agent** with the
-`effort` field in the frontmatter: `low | medium | high | max | inherit`. This is
+`effort` field in the frontmatter: `low | medium | high | xhigh | max | inherit`. This is
 what lets the analyzer and the implementer think just enough (medium) while the
 verifier thinks deeply (high), without paying extra latency where it isn't needed.
 
@@ -36,10 +36,6 @@ effort: high
 ```
 
 Important nuances:
-- The `effort` field in frontmatter is **relatively recent**. For much of 2026
-  the only control was the global variable `CLAUDE_CODE_EFFORT_LEVEL` (which
-  affects the entire session uniformly). Verify that your version of Claude Code
-  respects the per-agent `effort`; if it doesn't, upgrade or use the method below.
 - **Varying effort per sub-task within the same agent** (simple vs. complex) is
   not done well with frontmatter alone, because it's a fixed value in the file.
   Two robust options: (a) keep two variants of the implementer (a standard
@@ -89,7 +85,7 @@ code without tests).
 
 **Tools**: `Read, Grep, Glob, Bash` (+ MCP navigation tools if available, see the
 previous section). Bash is **read-only**: `git log`, `git blame`, `git diff`,
-`rg`, `ls`, `cat`, listing tests. **No Write/Edit/MultiEdit** — the structural
+`rg`, `ls`, `cat`, listing tests. **No Write/Edit** — the structural
 guarantee that an explorer doesn't mutate the repo. Prefer semantic MCP
 navigation over `grep` when available.
 
@@ -123,7 +119,7 @@ Sonnet on a delicate algorithm. Since the frontmatter is fixed, to vary per
 sub-task use a `task-implementer-deep` variant or embed "think harder"/"ultrathink"
 in the invocation (see the effort section above).
 
-**Tools**: `Read, Write, Edit, MultiEdit, Bash, Grep, Glob`. Do **not** include
+**Tools**: `Read, Write, Edit, Bash, Grep, Glob`. Do **not** include
 push capability or the ability to open PRs: external effects are controlled by the
 orchestrator with a user gate.
 

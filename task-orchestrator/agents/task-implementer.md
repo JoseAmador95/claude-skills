@@ -6,7 +6,7 @@ description: >-
   It does not open PRs or push: it only writes code, runs the tests for its
   slice, and reports. The orchestrator decides the model (sonnet by default,
   opus if the sub-task is complex) when invoking it.
-tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 effort: medium
 ---

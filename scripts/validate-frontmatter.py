@@ -87,7 +87,7 @@ def find_skill_dirs(root: Path) -> list[Path]:
 SKILL_REQUIRED = {"name", "description"}
 AGENT_REQUIRED = {"name", "description", "tools", "model"}
 COMMAND_REQUIRED = {"description"}
-EFFORT_VALID = {"low", "medium", "high", "max", "inherit"}
+EFFORT_VALID = {"low", "medium", "high", "xhigh", "max", "inherit"}
 
 
 def check_file(
@@ -109,9 +109,9 @@ def check_file(
         errors.append(f"{rel}: missing required keys: {', '.join(sorted(missing))}")
         return
 
-    # effort is optional, but if declared it must be a known value.  It is a
-    # relatively new subagent field; we validate the value without requiring
-    # the key, so older setups and the scaffold template keep passing.
+    # effort is optional, but if declared it must be a known value.  It is an
+    # optional subagent/skill field; we validate the value without requiring
+    # the key, so agents that omit it and the scaffold template keep passing.
     effort = fm.get("effort")
     if effort is not None and effort not in EFFORT_VALID:
         errors.append(
