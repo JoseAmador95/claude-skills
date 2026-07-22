@@ -1,5 +1,5 @@
 ---
-name: task-orchestrator
+name: task
 description: >-
   Orchestrate a development task end to end with a disciplined workflow: get the
   description (md file, chat, or GitHub issue), keep a log, analyze the repo with

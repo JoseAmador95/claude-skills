@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Validate YAML frontmatter in skill, agent, and command markdown files.
+"""Validate YAML frontmatter in plugin skill and agent markdown files.
 
-Rules:
-  - <skill>/SKILL.md           must have: name, description
-  - <skill>/agents/*.md        must have: name, description, tools, model
-                               and, if present, effort must be a valid value
-  - <skill>/commands/*.md      must have: description
+Rules (for every plugin under ``plugins/<plugin>/``):
+  - skills/<skill>/SKILL.md   must have: name, description
+  - agents/*.md               must have: name, description, tools, model
+                              and, if present, effort must be a valid value
+
+A plugin directory is a direct subdirectory of ``plugins/`` that carries a
+``.claude-plugin/plugin.json`` manifest.  The ``_template/`` scaffold at the repo
+root is intentionally not a plugin directory, so it is skipped.
 
 Frontmatter is the block between the first pair of --- delimiters at the top
 of the file.  We parse only the top-level scalar keys that appear at column 0
@@ -62,22 +65,23 @@ def extract_frontmatter(path: Path) -> dict[str, str] | None:
 # Discovery
 # ---------------------------------------------------------------------------
 
-def find_skill_dirs(root: Path) -> list[Path]:
-    """Return direct subdirectories of root that look like skill directories.
+def find_plugin_dirs(root: Path) -> list[Path]:
+    """Return plugin directories under ``<root>/plugins/``.
 
-    A skill directory must contain a SKILL.md file at its top level.
-    Hidden directories (starting with '.') are excluded.
+    A plugin directory is a direct subdirectory of ``plugins/`` that carries a
+    ``.claude-plugin/plugin.json`` manifest.  Hidden directories are excluded.
     """
-    skill_dirs = []
+    plugin_dirs: list[Path] = []
+    plugins_root = root / "plugins"
     try:
-        entries = sorted(root.iterdir())
+        entries = sorted(plugins_root.iterdir())
     except OSError:
-        return skill_dirs
+        return plugin_dirs
     for entry in entries:
         if entry.is_dir() and not entry.name.startswith("."):
-            if (entry / "SKILL.md").exists():
-                skill_dirs.append(entry)
-    return skill_dirs
+            if (entry / ".claude-plugin" / "plugin.json").exists():
+                plugin_dirs.append(entry)
+    return plugin_dirs
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +90,6 @@ def find_skill_dirs(root: Path) -> list[Path]:
 
 SKILL_REQUIRED = {"name", "description"}
 AGENT_REQUIRED = {"name", "description", "tools", "model"}
-COMMAND_REQUIRED = {"description"}
 EFFORT_VALID = {"low", "medium", "high", "xhigh", "max", "inherit"}
 
 
@@ -128,26 +131,26 @@ def validate(root: Path) -> bool:
     errors: list[str] = []
     checked: list[str] = []
 
-    skill_dirs = find_skill_dirs(root)
-    if not skill_dirs:
-        print("WARNING: no skill directories found (directories with SKILL.md) under", root)
+    plugin_dirs = find_plugin_dirs(root)
+    if not plugin_dirs:
+        print(
+            "WARNING: no plugin directories found "
+            "(plugins/*/.claude-plugin/plugin.json) under", root
+        )
         return True
 
-    for skill_dir in skill_dirs:
-        # --- SKILL.md ---
-        check_file(skill_dir / "SKILL.md", root, SKILL_REQUIRED, errors, checked)
+    for plugin_dir in plugin_dirs:
+        # --- skills/<skill>/SKILL.md ---
+        skills_dir = plugin_dir / "skills"
+        if skills_dir.is_dir():
+            for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+                check_file(skill_md, root, SKILL_REQUIRED, errors, checked)
 
         # --- agents/*.md ---
-        agents_dir = skill_dir / "agents"
+        agents_dir = plugin_dir / "agents"
         if agents_dir.is_dir():
             for agent_md in sorted(agents_dir.glob("*.md")):
                 check_file(agent_md, root, AGENT_REQUIRED, errors, checked)
-
-        # --- commands/*.md ---
-        commands_dir = skill_dir / "commands"
-        if commands_dir.is_dir():
-            for command_md in sorted(commands_dir.glob("*.md")):
-                check_file(command_md, root, COMMAND_REQUIRED, errors, checked)
 
     if errors:
         print("FAIL — frontmatter validation errors:")

@@ -1,4 +1,5 @@
 ---
+name: task-execute
 description: Execute an already-approved task plan in a fresh session (hard context reset)
 argument-hint: "<plan slug, e.g. google-oauth>"
 ---
