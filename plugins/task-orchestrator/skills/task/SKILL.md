@@ -9,6 +9,8 @@ description: >-
   feature following the workflow, mentions a GitHub issue number to fix, or asks
   for a full analysis → verification → PR process — even if they don't say
   "orchestrate".
+disable-model-invocation: true
+allowed-tools: Bash(git status *) Bash(git rev-parse *) Bash(git switch *) Bash(gh issue view *) Read Grep Glob
 ---
 
 # Task Orchestrator
@@ -142,18 +144,18 @@ subsystem (e.g. one for the auth backend, one for the frontend, one for the data
 layer). Each gets a bounded scope and returns a structured report, not the raw
 files. This is what keeps your context clean.
 
-Why a subagent and why `sonnet`: analysis is read + comprehension + synthesis.
-Sonnet is the cost/quality sweet spot; Opus is overkill here and Haiku doesn't
-synthesize relationships across many files well. The analyzer is **read-only** (no
-Write/Edit) so it can't mutate the repo by accident.
+Why a subagent and why `sonnet`: analysis is read + comprehension + synthesis, so
+the mid-tier model is the cost/quality sweet spot. `fable` can handle cheap,
+straightforward maps; scale up to `opus` only for genuinely intricate areas. The
+analyzer is **read-only** (no Write/Edit) so it can't mutate the repo by accident.
 
 **Code navigation via MCP**: if a navigation/LSP MCP server is available (symbols,
 go-to-definition, find-references — e.g. Serena or an LSP MCP), the analyzer
 should **prefer it over `grep`/`glob`**: it understands code structure
 (definitions, references, type hierarchy) instead of text matching, so it's more
-precise and cheaper. For the subagent to use it, its tools (`mcp__<server>__*`)
-must be in the agent's allowlist or declared via `mcpServers`; otherwise it won't
-see them. If there's no navigation MCP, fall back to `grep`/`glob`. See
+precise and cheaper. For the subagent to use it, add its tools (`mcp__<server>__*`)
+to the agent's allowlist (plugin agents ignore a frontmatter `mcpServers` block);
+otherwise it won't see them. If there's no navigation MCP, fall back to `grep`/`glob`. See
 `references/subagents.md`.
 
 Ask each analyzer to return: files/modules touched by the task, data flow,
@@ -194,9 +196,11 @@ phase 8). The orchestrator assigns **one `task-implementer` per sub-task** and c
 analyzer detected:
 
 - **In parallel** when the sub-tasks are independent (disjoint files, no ordering
-  between them). This is the fast mode. So two implementers don't step on each
-  other, isolate them: the safest is a `git worktree`/branch per implementer; if
-  you keep them in the same tree, make sure their file sets don't overlap.
+  between them). This is the fast mode. To keep two implementers from stepping on
+  each other, the `task-implementer` ships with `isolation: worktree`: each one runs
+  in its own git worktree automatically (branched off the default branch), and you
+  integrate each worktree's branch into the feature branch afterward. See
+  `references/subagents.md`.
 - **In sequence** when there are dependencies (B uses what A creates) or when they
   share files. Here sequential is faster in practice because you avoid merge
   conflicts.

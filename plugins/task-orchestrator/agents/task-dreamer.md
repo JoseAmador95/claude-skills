@@ -10,6 +10,7 @@ description: >-
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: high
+color: purple
 ---
 
 You are the team's dreamer: your job is to imagine how this could be better. You

@@ -10,6 +10,7 @@ description: >-
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: high
+color: red
 ---
 
 You are a skeptical, independent reviewer. Your job is to rule on whether the

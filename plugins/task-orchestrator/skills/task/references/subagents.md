@@ -55,19 +55,18 @@ of the code instead of doing text matching, which is more precise and spends les
 context.
 
 Installation gotcha: a subagent with `tools` as an allowlist **does not see** the
-MCP tools unless you add them explicitly. You have two routes:
+MCP tools unless you add them explicitly. **Inside a plugin, add them to the
+allowlist** — plugin subagents ignore a frontmatter `mcpServers` block for security:
 
 ```yaml
-# Route 1: add the MCP tools to the allowlist (names mcp__<server>__<tool>)
+# Add the MCP tools to the allowlist (names mcp__<server>__<tool>)
 tools: Read, Grep, Glob, Bash, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols
-
-# Route 2: declare the server in the frontmatter
-mcpServers:
-  serena: { command: "uvx", args: ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server"] }
 ```
 
-Check with `/mcp` which servers and tools you have available before assuming the
-analyzer can navigate semantically.
+Only when you install this agent standalone in `.claude/agents/` (outside the
+plugin) can you instead declare the server with an `mcpServers` block. Check with
+`/mcp` which servers and tools you have available before assuming the analyzer can
+navigate semantically.
 
 ---
 
@@ -77,11 +76,11 @@ analyzer can navigate semantically.
 anything.
 
 **Model: `sonnet`. Effort: `medium`.** Analysis is retrieval + comprehension +
-synthesis, not deep multi-step reasoning. Sonnet hits the right cost/quality
-balance. Opus is more expensive with no real gain for exploring; Haiku finds
-files but falters at synthesizing relationships across many of them. Scale up to
-`opus`/`high` only if the area is genuinely intricate (dense algorithms, legacy
-code without tests).
+synthesis, not deep multi-step reasoning, so the mid-tier model hits the right
+cost/quality balance. For cheap, straightforward maps, try **`fable`** (the fast,
+low-cost tier); scale up to `opus`/`high` only if the area is genuinely intricate
+(dense algorithms, legacy code without tests). The aliases `sonnet`, `opus`,
+`haiku`, and `fable` resolve to the latest snapshot of each tier.
 
 **Tools**: `Read, Grep, Glob, Bash` (+ MCP navigation tools if available, see the
 previous section). Bash is **read-only**: `git log`, `git blame`, `git diff`,
@@ -112,8 +111,9 @@ assigns one per sub-task and **can run several at once**: each implementer is an
 independent unit of work, so you scale by launching more, not by making one
 bigger.
 
-**Model and effort**: `sonnet`/`medium` by default (covers 70-90% of the work).
-Use **`opus`/`high`** for the sub-tasks the analyzer marked as `complex`. Decide
+**Model and effort**: three tiers by sub-task complexity — **`fable`** for
+boilerplate, **`sonnet`/`medium`** as the default (covers most of the work), and
+**`opus`/`high`** for the sub-tasks the analyzer marked as `complex`. Decide
 per sub-task, not globally: don't waste Opus on boilerplate nor fall short with
 Sonnet on a delicate algorithm. Since the frontmatter is fixed, to vary per
 sub-task use a `task-implementer-deep` variant or embed "think harder"/"ultrathink"
@@ -136,20 +136,21 @@ worktrees, each implementer commits on its own branch.
 ### Several implementers in parallel (with git worktrees)
 
 Launch several implementers at once when the sub-tasks are independent (separate
-modules, no shared files). To isolate them for real, give each one its own
-`git worktree`: an isolated checkout that shares the same `.git`:
+modules, no shared files). The `task-implementer` frontmatter sets
+**`isolation: worktree`**, so Claude Code runs each invocation in its own git
+worktree — an isolated checkout that shares the same `.git` — automatically. No
+manual `git worktree add` needed.
 
-```bash
-git worktree add ../proj-subtask-a -b subtask-a
-git worktree add ../proj-subtask-b -b subtask-b
-```
+Two things about how it works (Claude Code ≥ 2.1.203):
+- Each worktree branches **from the default branch**, not from your current feature
+  branch or HEAD, and it does **not** see the orchestrator's uncommitted work — so
+  give each implementer everything it needs in its prompt.
+- When an implementer finishes, integrate its worktree branch into the feature
+  branch (merge/cherry-pick); a worktree with no changes is auto-removed.
 
-You launch one implementer per worktree in parallel; when they finish, you merge
-the branches sequentially. The bottleneck is the merge: with shared files
-conflicts appear, so 5-10 agents is the practical limit. In Claude Code you can
-use `claude --worktree` and subagents with `isolation: worktree`. If the
-sub-tasks touch the same files, **don't parallelize**: sequential is faster in
-practice because you avoid merge hell.
+The bottleneck is still the merge: with shared files conflicts appear, so 5-10
+agents is the practical limit. If the sub-tasks touch the same files, **don't
+parallelize** — sequential is faster in practice because you avoid merge hell.
 
 ---
 
@@ -160,10 +161,11 @@ It's the counterweight to the orchestrator's bias. It judges correctness, nothin
 more: it isn't pedantic and doesn't propose improvements (that's the dreamer's
 job, below).
 
-**Model: `opus`. Effort: `high`.** Here it pays off: verification is where strong
-reasoning yields the most, it runs only once per task, and its verdict decides
-whether there's rework. The cost is bounded. Sonnet is acceptable only if the
-budget is tight. The stance is **skeptical and blind** on purpose.
+**Model: `opus`. Effort: `high`** (bump to `xhigh` for the hardest verifications).
+Here it pays off: verification is where strong reasoning yields the most, it runs
+only once per task, and its verdict decides whether there's rework. The cost is
+bounded. Sonnet is acceptable only if the budget is tight. The stance is
+**skeptical and blind** on purpose.
 
 **Tools**: `Read, Grep, Glob, Bash` (run tests, lint, build). **No Write/Edit** —
 its job is to judge, not to fix. If it could edit, it would silently "fix" the

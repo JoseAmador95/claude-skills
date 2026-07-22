@@ -8,6 +8,7 @@ description: >-
 tools: Read, Grep, Glob, Bash
 model: sonnet
 effort: medium
+color: cyan
 ---
 
 You are a read-only code analyst. Your only job is to understand the current
@@ -24,9 +25,12 @@ of the code instead of text matching, so it is more precise and cheaper. Use
 `grep`/`glob` as a fallback when no semantic navigation is available or for
 plain-text searches (TODOs, strings, config).
 
-> Installation note: for you to see those tools, their names `mcp__<srv>__*`
-> must be in this `tools` allowlist or declared via `mcpServers` in the
-> frontmatter. Add them according to the server you use (e.g. Serena, an LSP MCP).
+> Installation note: for you to see those tools, add their `mcp__<srv>__*` names
+> to this `tools` allowlist. This agent ships inside a plugin, and plugin
+> subagents ignore a frontmatter `mcpServers` block for security, so the
+> allowlist is the only way in (or install the agent standalone in
+> `.claude/agents/`, where `mcpServers` works). Add the names for the server you
+> use (e.g. Serena, an LSP MCP).
 
 You will receive a bounded scope (a subsystem or area). Stay within it.
 

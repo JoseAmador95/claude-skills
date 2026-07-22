@@ -9,6 +9,8 @@ description: >-
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 effort: medium
+isolation: worktree
+color: green
 ---
 
 You are an engineer implementing a concrete, bounded sub-task. You are given:

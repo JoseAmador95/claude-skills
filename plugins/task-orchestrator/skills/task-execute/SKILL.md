@@ -2,6 +2,8 @@
 name: task-execute
 description: Execute an already-approved task plan in a fresh session (hard context reset)
 argument-hint: "<plan slug, e.g. google-oauth>"
+disable-model-invocation: true
+allowed-tools: Bash(git rev-parse *) Bash(git switch *) Bash(git status *) Read Grep Glob
 ---
 
 You are about to execute an already-approved implementation plan in a clean
