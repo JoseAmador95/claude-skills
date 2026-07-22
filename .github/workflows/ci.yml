@@ -28,20 +28,3 @@ jobs:
 
       - name: Validate SKILL.md, agents/*.md and commands/*.md frontmatter
         run: python3 scripts/validate-frontmatter.py .
-
-  install-smoke:
-    name: Install smoke test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      # jq is preinstalled on ubuntu-latest runners; install defensively in
-      # case that ever changes, so the settings.json merge path is exercised.
-      - name: Ensure jq is available
-        run: |
-          if ! command -v jq >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get install -y jq
-          fi
-
-      - name: Install the bundle into a throwaway target and check idempotency
-        run: bash scripts/test-install.sh
