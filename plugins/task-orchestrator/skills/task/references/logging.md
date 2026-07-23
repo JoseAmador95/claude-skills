@@ -1,8 +1,9 @@
 # Task logging
 
-The log is the source of truth for progress, persistent outside your context
-window. If the session drags on or you lose the thread, you reconstruct it by
-reading the log.
+The log is a **decision & surprise journal**, not minutes of every phase. It holds
+what you could NOT reconstruct later from `git log`, the diff, and the plan file —
+so if the session drags on, gets compacted, or is handed off, you recover the *why*
+and the *state*, not the *what* (git already has the *what*).
 
 ## Location
 
@@ -10,65 +11,56 @@ reading the log.
 repository name and `<slug>` is a short name derived from the task (e.g.
 `google-oauth`). The logs live **outside the repository**, under your home dir and
 namespaced per repo, so they never pollute the project tree and there's no
-`.gitignore` step. Resolve the directory once and reuse it for the log and the
-plan:
+`.gitignore` step. `session-start.sh` pre-creates the directory; resolve it once and
+reuse it for the log and the plan:
 
 ```bash
 TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
-mkdir -p "$TASK_LOG_DIR"
 ```
 
-Alternative: if you prefer not to leave files behind at all, you can use Claude
-Code's memory tool for the same content. The file under `~/.claude/task-logs/` is
-the default option because it's inspectable and portable across sessions.
+Within a session the file survives compaction (the main thing it defends against);
+in a remote/ephemeral session it may not outlive the container between sessions, and
+in the local CLI it's fully durable. If you'd rather not leave files behind, Claude
+Code's memory tool holds the same content.
 
-## When to write (per event, not just per phase)
+## When to write (only the irreplaceable)
 
-The log is written **throughout all phases, every time something relevant
-happens**, not only when closing each phase. Trigger a new entry whenever any of
-these occurs:
+Append an entry the moment one of these happens — and **only** these:
 
-- Key information learned (from analysis, from implementation, from CI).
-- An **error or bug**, whether it directly affects the task or you found it by
-  chance while doing something else. Note it down even if you're not going to fix
-  it now: an unrecorded side bug is a lost bug.
-- A **decision** (yours or the user's) and its why.
-- A **deviation** from the approved plan.
-- The closing of each phase (summary entry).
+- A **decision** (yours or the user's) and its *why*. Especially the user's phase-4
+  answers: they feed the ADR and vanish if not captured.
+- A **deviation** from the approved plan, and why.
+- A **finding**: a bug or risk you hit — whether or not it affects the task, whether
+  you went looking for it or stumbled on it. An unrecorded side bug is a lost bug.
+- A **resume pointer** at each phase boundary: one line, current state → what's
+  next, so a post-compaction restart knows where it is.
 
-The mental rule: if a week from now you'd want to know "why was this done this
-way?" or "where did this bug come from?", it should be in the log at the moment it
-happened.
+Do **not** log a restatement of what changed or a full per-phase summary: if it's
+reconstructable from git + the plan file, it doesn't belong here. The rule: if a
+week from now you'd want to know *"why was this done this way?"*, *"where did this
+bug come from?"*, or *"where was I?"*, it goes in — everything else is noise.
 
-## Structure of each entry
+## Entry format
 
-**Phase-closing entries** use the full `assets/task-log.template.md` fields:
+One line is the default:
 
-- **Timestamp**: date and time.
-- **Phase**: number and name of the workflow phase.
-- **What the agent learned**: relevant findings (from analysis, from
-  implementation, from CI…).
-- **What should be done**: derived actions, pending items.
-- **How it affects the repo**: impacted files/modules, side effects.
-- **Deviations from the initial plan**: any change from what was planned and why
-  (this is one of the most valuable things in the log).
-- **Conclusion**: state at the close of the phase.
+```
+- [<YYYY-MM-DD HH:MM>] <decision|deviation|finding|resume> · <what> · <why>
+```
 
-**Incidental events** (a bug spotted in passing, a one-off decision) don't need the
-full template — a single line is enough: `timestamp · what · why`. Keep them cheap
-so there's never an excuse not to record them.
+Expand to a few lines only when a decision needs its context to make sense later
+(the alternatives weighed, the constraint that forced it). The header block of
+`assets/task-log.template.md` opens the file; after that, it's one-liners.
 
 ## Mirroring to GitHub (opt-in)
 
-If the task comes from an issue, you can mirror each entry as a comment on the
-issue to leave a public trace of progress. **It's opt-in**: ask the user first,
-because it writes to the issue and that's a visible external effect.
-
-If they accept:
+If the task comes from an issue, you can mirror entries as comments to leave a
+public trace. **It's opt-in**: ask first, because it writes to the issue (a visible
+external effect).
 
 ```bash
 gh issue comment <n> --body-file <path-to-the-entry.md>
 ```
 
-Keep the local file as the complete record and publish each new entry as a
-comment. Don't publish secrets or sensitive internal paths in public comments.
+Keep the local file as the complete record. Don't publish secrets or sensitive
+internal paths in public comments.

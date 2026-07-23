@@ -19,9 +19,11 @@ conversation, only the plan on disk.
    analysis, the questions, and the plan are already done and approved — don't
    repeat them.
 3. Keep the same rules: feature branch, one implementer per sub-task
-   (parallel/sequential per the plan), strict verifier (max 3 rounds), dreamer,
-   docs/ADR, atomic commits, and user gates for push/PR/merge.
-4. Keep logging by event.
+   (parallel/sequential per the plan), strict verifier (max 3 rounds), docs/ADR,
+   atomic commits, and user gates for push/PR/merge. The dreamer is opt-in — run
+   it only if you want ideas.
+4. Keep the decision log: append one-liners for decisions, deviations, and
+   findings (see the orchestrator's `references/logging.md`).
 
 If the plan or the log don't exist, say so and don't make things up: the task
 probably never got its plan approved, and you should start from Phase 0.

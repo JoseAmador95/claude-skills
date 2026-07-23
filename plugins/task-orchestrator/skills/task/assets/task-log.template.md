@@ -7,27 +7,13 @@
 
 ---
 
-## [<YYYY-MM-DD HH:MM>] Phase <N> — <name> · <phase close | event: key info / error / bug / decision / deviation>
-
-**What the agent learned**
-- 
-
-**What needs to be done**
-- 
-
-**Repo impact**
-- 
-
-**Deviations from the initial plan**
-- (none / describe)
-
-**Conclusion**
-- 
-
----
-
 <!--
-Write an entry PER EVENT, not just when closing phases: every time key info,
-an error, a bug (whether or not it affects the task, intentional or accidental),
-a decision, or a deviation appears. Copy this block for each entry.
+A decision & surprise journal, NOT phase minutes. Append a one-liner only when one
+of these happens (see references/logging.md) — never restate what git already holds:
+  decision · deviation · finding (bug/risk) · resume pointer at a phase boundary
 -->
+
+- [<YYYY-MM-DD HH:MM>] decision · <what was decided> · <why>
+- [<YYYY-MM-DD HH:MM>] deviation · <what changed vs the plan> · <why>
+- [<YYYY-MM-DD HH:MM>] finding · <bug/risk spotted> · <impact; fix now or later>
+- [<YYYY-MM-DD HH:MM>] resume · phase <N> done → next: <what's next>

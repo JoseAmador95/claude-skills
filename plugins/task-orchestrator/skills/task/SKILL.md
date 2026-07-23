@@ -28,11 +28,12 @@ fresh, unbiased agent.
 
 - **You don't write production code.** You delegate to subagents with bounded
   context. Your context should hold summaries, not dumps of 20 files.
-- **The log is the source of truth**, not your conversational memory. And it's
-  written **by event**, not just at phase boundaries: every time something
-  relevant happens (key information, an error, a bug — whether or not it affects
-  the task, whether you went looking for it or stumbled onto it) you record it on
-  the spot. If you lose the thread, you recover it from the log.
+- **The log is a decision journal**, not your conversational memory and not phase
+  minutes. Append a one-liner the moment you hit a **decision**, a **deviation**
+  from the plan, or an out-of-band **finding** (a bug/risk, whether or not it
+  affects the task), plus a one-line resume pointer at each phase boundary. Don't
+  restate what git already records; if you lose the thread, you recover the *why*
+  and the *state* from the log.
 - **You never work on the default branch.** Every commit goes to a feature branch.
 - **Human approval gates** before any irreversible or external action: the
   implementation plan, push to remote, opening a PR, merging. Never do them
@@ -117,10 +118,10 @@ and reuse it for both the log and the `<slug>.plan.md`:
 TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
 ```
 
-Entry format, the **write-by-event** rule (log the moment something relevant
-happens, not just at phase boundaries — see Principles), and opt-in GitHub
-mirroring are all in `references/logging.md`. Mirroring writes each entry as an
-issue comment, so it's opt-in — ask first.
+Seed it with the template's header block, then append one-liners as you go
+(decisions, deviations, findings, and a resume pointer per phase — see Principles).
+Entry format and opt-in GitHub mirroring are in `references/logging.md`; mirroring
+writes each entry as an issue comment, so ask first.
 
 ## PHASE 3 — Analyze the current state (subagents)
 
@@ -142,8 +143,8 @@ Ask each analyzer to return: files/modules touched by the task, data flow,
 existing patterns and conventions to imitate, current tests and gaps, risks, and a
 **list of proposed sub-tasks** marking which ones are "complex" (algorithms,
 concurrency, security) — that mark decides the implementer's model in phase 5.
-Record the consolidated summary in the log, and any bug or risk that surfaces
-along the way as its own log entry.
+Log any bug or risk the analyzer surfaces (a finding); the rest of its report feeds
+the plan in phase 4, so it needs no separate log entry.
 
 ## PHASE 4 — Clarify open questions and propose a plan (approval gate)
 
@@ -203,9 +204,9 @@ the subagents (fresh context) and on disk. This is the practical equivalent of
 hard reset, use the optional handoff to a new session (the `task-execute` skill,
 invoked as `/task-execute`).
 
-Record in the log what was implemented, how it affects the repo, and any deviation
-from the plan (entry by event; e.g. "the endpoint required an index that wasn't
-planned").
+Log only the **deviations** from the plan and any **finding** along the way (e.g.
+"the endpoint needed an unplanned index") — not what was implemented, which the
+diff and commit messages already record.
 
 ## PHASE 6 — Update documentation and ADR
 
