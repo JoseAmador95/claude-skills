@@ -42,8 +42,7 @@ happened.
 
 ## Structure of each entry
 
-Each entry (phase-closing or one-off event) uses `assets/task-log.template.md`.
-Fields per entry:
+**Phase-closing entries** use the full `assets/task-log.template.md` fields:
 
 - **Timestamp**: date and time.
 - **Phase**: number and name of the workflow phase.
@@ -54,6 +53,10 @@ Fields per entry:
 - **Deviations from the initial plan**: any change from what was planned and why
   (this is one of the most valuable things in the log).
 - **Conclusion**: state at the close of the phase.
+
+**Incidental events** (a bug spotted in passing, a one-off decision) don't need the
+full template — a single line is enough: `timestamp · what · why`. Keep them cheap
+so there's never an excuse not to record them.
 
 ## Mirroring to GitHub (opt-in)
 

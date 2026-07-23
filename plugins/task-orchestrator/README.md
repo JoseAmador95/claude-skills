@@ -37,7 +37,7 @@ starts when you invoke `/task`, never on its own.
 
 | Path | What it is |
 |---|---|
-| `skills/task/` | The workflow skill (triage + 12 phases) with its `references/` and `assets/`. |
+| `skills/task/` | The workflow skill (triage + 10 phases) with its `references/` and `assets/`. |
 | `skills/task-execute/` | The relay skill to run an approved plan in a clean session. |
 | `agents/` | The four subagents: `task-analyzer`, `task-implementer`, `task-verifier`, `task-dreamer`. |
 | `hooks/` | Deterministic gates (`hooks.json` + scripts): block the default branch, tests before push, auto-format, plus SessionStart/SubagentStop bookkeeping. |

@@ -5,9 +5,8 @@ This file details the four subagents in the flow. The plugin ships them (in its
 the `Task` tool using these same prompts.
 
 The **source of truth** for each agent's `model`, `effort` and `tools` is its
-frontmatter in `agents/*.md` (the CI validates it). The values quoted here and in
-the SKILL.md summary table mirror those files; if they ever differ, the agent file
-wins.
+frontmatter in `agents/*.md` (the CI validates it). The values quoted here mirror
+those files; if they ever differ, the agent file wins.
 
 ## Why subagents instead of doing everything in the main session
 
@@ -154,7 +153,7 @@ parallelize** — sequential is faster in practice because you avoid merge hell.
 
 ---
 
-## 3. task-verifier (Phase 7a)
+## 3. task-verifier (Phase 7)
 
 **Purpose**: independently rule on whether the task meets its acceptance criteria.
 It's the counterweight to the orchestrator's bias. It judges correctness, nothing
@@ -192,7 +191,7 @@ sub-tasks. You don't move on to commits/PR without a `PASS`.
 
 ---
 
-## 4. task-dreamer (Phase 7b, optionally phase 4)
+## 4. task-dreamer (opt-in: phase 4 or on demand)
 
 **Purpose**: contribute ideas and improvements. It's the generative role that was
 split off from the verifier. Where the verifier is skeptical, blind and blocking,
@@ -214,6 +213,6 @@ improve, it should say so — that's valid.
 
 The orchestrator brings the ideas to the user, who decides on each one: apply it
 now (it becomes a sub-task → phase 5 → re-verify), defer it to a new issue, or
-discard it. Since it doesn't block, the dreamer can run in parallel with the
-verifier, or in phase 4 so that its ideas about the approach make it into the
-approved plan.
+discard it. It's **opt-in and non-blocking**: its best home is phase 4 (so its
+ideas about the approach reach the approved plan), and you can also run it on
+demand after verification.

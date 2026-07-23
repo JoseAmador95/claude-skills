@@ -19,11 +19,10 @@ Your role is to be the **orchestrator**. You don't implement directly: you
 coordinate subagents, keep the log, and you are the only one who runs actions
 with external effects (push, PR, merge) — always with the user's approval.
 
-The reasoning behind this whole flow: the context window degrades as it fills up
-(*context rot*), and an agent that both implements AND judges itself rationalizes
-its own mistakes. That's why we isolate heavy reads in subagents, keep a
-persistent log outside the context, and verify with a fresh agent that doesn't
-share your bias.
+The flow exists because context degrades as it fills up (*context rot*) and an
+agent that judges its own work rationalizes its own mistakes: so we isolate heavy
+reads in subagents, keep a persistent log outside the context, and verify with a
+fresh, unbiased agent.
 
 ## Principles that govern the whole flow
 
@@ -43,32 +42,24 @@ share your bias.
 - **Loops, not a straight line.** If the verifier fails, you go back and
   re-implement. If CI fails, you propose a plan and wait for approval.
 
-## Subagent configuration (summary)
+## Subagents (summary)
 
-Full detail and the agent files are in `references/subagents.md`. Summary:
+Full config, prompts, and the worktree pattern are in `references/subagents.md`;
+the **source of truth** for each agent's model/effort/tools is its frontmatter in
+`agents/*.md` (the CI validates it).
 
-| Subagent | Phase | Model | Effort | Tools | Writes code |
-|---|---|---|---|---|---|
-| `task-analyzer` | 3 | sonnet | medium | Read, Grep, Glob, Bash (read-only) + navigation MCP | NO |
-| `task-implementer` | 5 | sonnet (opus if complex) | medium (↑ high if complex) | Read, Write, Edit, Bash, Grep, Glob | YES |
-| `task-verifier` | 7a | opus | high | Read, Grep, Glob, Bash (tests/lint/build) | NO |
-| `task-dreamer` | 7b (or 4) | opus | high | Read, Grep, Glob, Bash (read-only) | NO |
+| Subagent | Phase | Writes code |
+|---|---|---|
+| `task-analyzer` | 3 | NO |
+| `task-implementer` | 5 | YES |
+| `task-verifier` | 7 | NO |
+| `task-dreamer` | 4 or on demand | NO |
 
-The verifier and the dreamer are **opposite, separate agents**: the verifier
-judges correctness blind (no context, no improvement suggestions); the dreamer
-brings ideas with all the context it can get and never blocks.
-
-This table is a quick reference; the **source of truth** for each agent's
-model/effort/tools is its frontmatter in `agents/*.md` (the CI validates it). If
-they ever differ, the agent file wins — update the table to match it.
-
-The `effort` field (low/medium/high/xhigh/max/inherit) sets each subagent's
-reasoning budget independently of its model. Detail in `references/subagents.md`.
-
-The plugin ships all four agents, so they load automatically as `task-analyzer`,
-`task-implementer`, `task-verifier`, and `task-dreamer` (invoke them by bare name).
-If you'd rather run them ad hoc, launch them with the `Task` tool and an equivalent
-inline prompt; the prompts are in the plugin's `agents/`.
+The verifier and the dreamer are **opposite agents**: the verifier judges
+correctness blind (no context, no suggestions) and blocks; the dreamer brings ideas
+with full context and never blocks. All four ship with the plugin and load by bare
+name; to run one ad hoc, launch it with the `Task` tool and the prompt from
+`agents/`.
 
 ---
 
@@ -81,7 +72,7 @@ Don't bring a cannon to swat a fly. Before anything, classify the task:
   risk. Here you skip the pipeline: create the feature branch (phase 2), make the
   change, run the tests, commit, and offer a PR. No subagents, no formal analysis,
   no verifier/dreamer. Record a short entry in the log.
-- **Substantial → full flow**: everything else. Continue with phases 1→12.
+- **Substantial → full flow**: everything else. Continue with phases 1→10.
 
 When in doubt, go to the full flow. The rule of thumb: if you have to think about
 whether it's trivial, it probably isn't. Tell the user which path you chose and
@@ -119,24 +110,17 @@ All the commits in phase 8 will go to this branch.
 **Create the log** `~/.claude/task-logs/<repo>/<slug>-<YYYY-MM-DD>.md` from
 `assets/task-log.template.md`. The logs live **outside the repo**, under your home
 dir, namespaced by repository — so they never pollute the project tree and there's
-no `.gitignore` step to remember. Resolve the directory once and reuse it:
+no `.gitignore` step. `session-start.sh` already created the dir; resolve it once
+and reuse it for both the log and the `<slug>.plan.md`:
 
 ```bash
 TASK_LOG_DIR="$HOME/.claude/task-logs/$(basename "$(git rev-parse --show-toplevel)")"
-mkdir -p "$TASK_LOG_DIR"        # holds both the log and the <slug>.plan.md
 ```
 
-Each log entry carries: timestamp, phase, **what the agent learned**, **what needs
-to be done**, **repo impact**, **deviations from the initial plan**, and a
-**conclusion**. Write entries **by event, throughout all phases**: not just when
-closing each phase, but every time something relevant comes up — key information,
-an error, a bug (whether it affects the task or you found it by chance), a
-decision, a deviation. The log must be able to reconstruct the task's history
-without your conversational context.
-
-Format detail and GitHub mirroring in `references/logging.md`. Mirroring (each
-entry as an issue comment via `gh issue comment`) is **opt-in**: ask the user if
-they want it, because it writes to the public issue.
+Entry format, the **write-by-event** rule (log the moment something relevant
+happens, not just at phase boundaries — see Principles), and opt-in GitHub
+mirroring are all in `references/logging.md`. Mirroring writes each entry as an
+issue comment, so it's opt-in — ask first.
 
 ## PHASE 3 — Analyze the current state (subagents)
 
@@ -145,19 +129,14 @@ subsystem (e.g. one for the auth backend, one for the frontend, one for the data
 layer). Each gets a bounded scope and returns a structured report, not the raw
 files. This is what keeps your context clean.
 
-Why a subagent and why `sonnet`: analysis is read + comprehension + synthesis, so
-the mid-tier model is the cost/quality sweet spot. `fable` can handle cheap,
-straightforward maps; scale up to `opus` only for genuinely intricate areas. The
-analyzer is **read-only** (no Write/Edit) so it can't mutate the repo by accident.
+The analyzer is **read-only** (no Write/Edit) so it can't mutate the repo by
+accident. Why a subagent, and the model rationale (`sonnet` default, `fable` for
+cheap maps, `opus` for intricate areas), are in `references/subagents.md`.
 
-**Code navigation via MCP**: if a navigation/LSP MCP server is available (symbols,
-go-to-definition, find-references — e.g. Serena or an LSP MCP), the analyzer
-should **prefer it over `grep`/`glob`**: it understands code structure
-(definitions, references, type hierarchy) instead of text matching, so it's more
-precise and cheaper. For the subagent to use it, add its tools (`mcp__<server>__*`)
-to the agent's allowlist (plugin agents ignore a frontmatter `mcpServers` block);
-otherwise it won't see them. If there's no navigation MCP, fall back to `grep`/`glob`. See
-`references/subagents.md`.
+**Code navigation via MCP**: if a navigation/LSP MCP server is available (Serena,
+an LSP MCP), the analyzer should **prefer it over `grep`/`glob`** — but a plugin
+subagent only sees the MCP tools you add to its allowlist (`mcp__<server>__*`); it
+ignores a frontmatter `mcpServers` block. Setup detail in `references/subagents.md`.
 
 Ask each analyzer to return: files/modules touched by the task, data flow,
 existing patterns and conventions to imitate, current tests and gaps, risks, and a
@@ -186,8 +165,8 @@ durable artifact: from here on you and the subagents reference it **by path**,
 instead of reloading the whole planning conversation. That keeps the orchestrator
 thin (see the context note in phase 5).
 
-Record the approved plan in the log along with every decision the user made — this
-feeds the ADR (phase 6).
+Log that the plan was approved and every decision the user made (these feed the ADR
+in phase 6) — reference the plan by path, don't copy its body into the log.
 
 ## PHASE 5 — Implementation (one or more implementers)
 
@@ -196,12 +175,10 @@ phase 8). The orchestrator assigns **one `task-implementer` per sub-task** and c
 **launch several**, in parallel or in sequence depending on the dependencies the
 analyzer detected:
 
-- **In parallel** when the sub-tasks are independent (disjoint files, no ordering
-  between them). This is the fast mode. To keep two implementers from stepping on
-  each other, the `task-implementer` ships with `isolation: worktree`: each one runs
-  in its own git worktree automatically (branched off the default branch), and you
-  integrate each worktree's branch into the feature branch afterward. See
-  `references/subagents.md`.
+- **In parallel** when the sub-tasks are independent (disjoint files, no ordering).
+  The `task-implementer` ships with `isolation: worktree`, so each runs in its own
+  git worktree (branched off the default branch); integrate each worktree's branch
+  into the feature branch afterward. See `references/subagents.md`.
 - **In sequence** when there are dependencies (B uses what A creates) or when they
   share files. Here sequential is faster in practice because you avoid merge
   conflicts.
@@ -211,13 +188,12 @@ parallel, then the next wave that depended on them.
 
 Implementer config (detail in `references/subagents.md`):
 - **Model/effort**: `sonnet`/`medium` by default; **`opus`/`high`** for the
-  sub-tasks the analyzer marked as complex. Per sub-task, not global.
-- **Bounded context**: give each implementer only the spec for ITS sub-task + the
-  relevant portion of the analyzer's report + the conventions. Tell it explicitly
-  to **stay within its assigned files**, so the parallel siblings don't collide.
-- **Tools**: Read, Write, Edit, Bash, Grep, Glob. It does **not** open PRs or push:
-  those external effects are yours and go through a user gate.
-- Each implementer runs the tests/lint for its slice and reports.
+  sub-tasks the analyzer marked complex. Per sub-task, not global.
+- **Bounded context**: give each implementer only the spec for ITS sub-task, the
+  relevant slice of the analyzer's report, and the conventions — and tell it to
+  **stay within its assigned files** so parallel siblings don't collide.
+- It runs its slice's tests/lint and reports; it does **not** push or open PRs
+  (those external effects are yours, behind a user gate).
 
 **Orchestrator context hygiene**: you are a control plane, not a worker. Don't
 re-read whole files or pile the code into your context: reference the plan
@@ -226,11 +202,6 @@ the subagents (fresh context) and on disk. This is the practical equivalent of
 "clear and reload": your window stays light throughout the run. If you want a real
 hard reset, use the optional handoff to a new session (the `task-execute` skill,
 invoked as `/task-execute`).
-
-**Commits (preview of phase 8)**: keep one atomic commit per sub-task. If you
-parallelize in worktrees, each implementer commits on its own branch and you
-integrate those branches into the feature branch. If you work in a single tree,
-you commit each sub-task's files separately.
 
 Record in the log what was implemented, how it affects the repo, and any deviation
 from the plan (entry by event; e.g. "the endpoint required an index that wasn't
@@ -243,26 +214,17 @@ Two things, as applicable (detail and templates in `references/adr-and-docs.md`)
 1. **Docs**: update the relevant `.md` files in `docs/` (module READMEs, guides,
    API references). Reflect behavior changes and new limitations.
 2. **ADR** (Architecture Decision Record): if the task made an architectural
-   decision, add `docs/adr/NNNN-<title>.md` from `assets/adr.template.md`. Include:
-   context, decision, consequences, **workflow changes**, **limitations**, and
-   **decisions the user made** (from phase 4).
+   decision, add `docs/adr/NNNN-<title>.md` from `assets/adr.template.md`. Its
+   fields and the Mermaid-diagram guidance are in `references/adr-and-docs.md`;
+   remember to capture the **decisions the user made** in phase 4.
 
 If the task changed neither architecture nor observable behavior, say no ADR is
 needed and skip it — an empty ADR is debt, not documentation.
 
-**Diagrams**: text is the primary medium. Use Mermaid diagrams only when they
-genuinely help (a flow, a state machine, an architecture that would be confusing
-in prose), embedded in ```mermaid blocks. Don't replace a clear explanation with a
-diagram, and don't add decorative diagrams.
+## PHASE 7 — Verification (strict gate): `task-verifier`
 
-## PHASE 7 — Verification and ideation (two independent, separate subagents)
-
-After implementing, two fresh agents look at the result with opposite purposes.
-They are **different agents and they don't mix**: one judges, the other imagines.
-
-### 7a — Verification (strict gate): `task-verifier`
-
-Launch a fresh `task-verifier` and give it **only two things**:
+After implementing, a fresh `task-verifier` judges the result against the spec.
+Give it **only two things**:
 
 1. The task's original acceptance criteria (phase 1).
 2. The real diff (`git diff <base>...HEAD`) and access to the code and tests.
@@ -274,35 +236,27 @@ propose improvements** — only correctness against the spec. Model `opus`, effo
 `high`; read-only tools + test/lint/build execution, **no Write/Edit**.
 
 **Run CI locally if possible**: ask the verifier to detect the CI config
-(`.github/workflows/*.yml`, `.gitlab-ci.yml`, `Makefile`…), extract the commands,
-and run them locally, skipping only the steps that depend on remote infra.
-Catching the failure here is ~10x faster than waiting for the remote runner
-(phases 10-11) and reduces the CI-red cycle to nearly zero.
+(`.github/workflows/*.yml`, `Makefile`…), extract the commands, and run them
+locally (skipping remote-only steps). Catching a failure here is far faster than
+waiting for the remote runner in phase 10.
 
 Output: **PASS / PARTIAL / FAIL** + per-criterion evidence + **gaps**. If it's
 PARTIAL or FAIL → go back to **PHASE 5** with the gaps as new sub-tasks.
 **Cap: 3 rounds.** If after 3 verify→fix iterations the verifier still doesn't
 give PASS, stop and escalate to the user with the remaining gaps instead of
-spinning: there's probably something about the approach or the criteria that needs
-rethinking with them. Don't move on to commits without PASS. Record every verdict.
+spinning. Don't move on to commits without PASS. Record every verdict.
 
-### 7b — Ideation (non-blocking): `task-dreamer`
+### Ideation (opt-in, non-blocking): `task-dreamer`
 
-Launch a `task-dreamer` to bring **ideas and improvements**. It's the
-verifier's counterpoint: where that one is skeptical and blind, this one is
-expansive and well-informed — give it the task objective, the analyzer's report,
-and the diff, because the more context, the better the ideas. Model `opus`, effort
-`high`; read-only.
-
-Its ideas **never block** progress. Output: a list of ideas with value,
-impact/effort, and when (`now` / `follow-up` / `someday`). Take them to the user to
-decide: apply now (they become sub-tasks → phase 5 → re-verify), defer to a new
-issue (with their approval), or discard. Record the ideas and the decision in the
-log.
-
-> The dreamer can also be invoked in **phase 4** (planning), before implementing:
-> there its ideas about the approach are the cheapest to incorporate. Since it
-> doesn't block, its default home is here (7b), but it's flexible.
+Optional counterpart to the verifier. When you want ideas and improvements —
+alternative approaches, optimizations, follow-ups, debt to pay off — launch a
+`task-dreamer` with the **full** context (task objective, analyzer report, diff).
+Its cheapest home is **phase 4** (planning), where its ideas reach the plan before
+any code is written; you can also run it on demand after verification. It **never
+blocks**: take its ideas to the user, who decides to apply now (→ sub-task → phase
+5 → re-verify), defer to a new issue, or discard. It ships with the plugin
+(`agents/task-dreamer.md`) — it's just not part of the default flow. Record the
+ideas and the decision in the log.
 
 ## PHASE 8 — Atomic commits per sub-task
 
@@ -317,12 +271,9 @@ selective `git add` of that sub-task's files — not a `git add -A` that mixes
 sub-tasks. If a sub-task touched tests + impl + docs, they go together in its
 commit.
 
-Before committing, **confirm you're on the feature branch** (the one from phase 2),
-not the default one: `git rev-parse --abbrev-ref HEAD`. If for whatever reason
-you're on `main`/`master`, stop and move to the feature branch before continuing.
-
-Committing locally is fine without asking. **Pushing to a remote requires the
-user's approval** (you combine it with phase 9).
+Committing locally is fine without asking — the `block-default-branch.sh` hook
+already stops any commit on the default branch, so you don't need to re-check.
+**Pushing to a remote requires the user's approval** (you combine it with phase 9).
 
 ## PHASE 9 — Open the PR (with the user's approval)
 
@@ -341,38 +292,25 @@ Build the body from `assets/pr-body.template.md`. **Highlight what matters**:
   backend, request/response examples or usage snippets.
 - What was tested, and `Closes #n` to link the issue.
 
-## PHASE 10 — Wait for the CI result
+## PHASE 10 — Watch CI and land
+
+Watch the checks and keep the user informed:
 
 ```bash
-gh pr checks <n> --watch     # blocks until the checks finish
+gh pr checks <n> --watch     # blocks until checks finish; poll `gh pr checks <n>` if --watch is unavailable
 ```
 
-If `--watch` doesn't apply in their setup, poll with `gh pr checks <n>` every so
-often. Keep the user informed of the status.
+**If CI fails**: get the logs (`gh run view <run-id> --log-failed`), diagnose the
+root cause, and **propose a plan** — don't auto-fix. On approval, re-implement
+(phase 5 scoped to the fix) → commit → push → watch again. Record what failed and
+why (valuable deviation info). Always tell a **real failure from a flaky one**
+before "fixing". **Cap: 3 attempts** — if CI is still red after 3 fix cycles, stop
+and escalate to the user (it may be flaky, an environment issue, or a call a human
+must make).
 
-## PHASE 11 — If CI fails: propose a plan (don't auto-fix)
-
-Retrieve the failure logs:
-
-```bash
-gh run view <run-id> --log-failed
-```
-
-Diagnose the root cause and **propose a plan** to the user. Don't apply the fix
-automatically: show the plan, wait for approval, and only then re-implement (phase
-5 scoped to the fix) → commit → push → back to phase 10. Record in the log what
-failed and why (this is valuable deviation information).
-
-**Cap: 3 attempts.** If CI is still red after 3 fix cycles, stop and escalate to
-the user instead of insisting — it might be flaky, an environment problem, or
-something that needs a human decision. Always distinguish a real failure from a
-flaky one before "fixing".
-
-## PHASE 12 — If CI passes: wait for the user to merge
-
-Report that it's green. **Don't merge automatically.** The merge is the user's
-decision: wait for their explicit instruction. When they ask, you can do the merge
-(`gh pr merge <n>`) and close the log with the final conclusion.
+**If CI passes**: report it's green. **Don't merge automatically** — the merge is
+the user's decision. When they explicitly ask, do it (`gh pr merge <n>`) and close
+the log with the final conclusion.
 
 ---
 
